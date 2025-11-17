@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id        String  @id @default(uuid())
+  sessionId String  @unique // sessionid из cookies (уникальный идентификатор)
+  tiktokUid String? // uid_tt или uid_tt_ss из cookies
+  username  String? // Username профиля TikTok (@username)
+  userAgent String  @db.Text // Уникальный User-Agent для этого аккаунта
+  cookies   String  @db.Text // Полные cookies в JSON формате
+  proxy     String? // Прокси для этого аккаунта
+
+  // Последняя статистика профиля (для быстрого доступа)
+  followers Int @default(0)
+  following Int @default(0)
+  likes     Int @default(0)
+  views     Int @default(0) // Просмотры видео
+
+  lastUsedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  videos        VideoUpload[]
+  hashtags      AccountHashtag[]
+  stats         AccountStats[] // История статистики
+  statsProgress StatsProgress[] // Прогресс сбора статистики
+
+  @@index([sessionId])
+  @@index([tiktokUid])
+  @@map("accounts")
+}
+
+model AccountStats {
+  id        String  @id @default(uuid())
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  followers Int
+  following Int
+  likes     Int
+  views     Int @default(0) // Просмотры видео
+
+  source    String // "initial" (при создании), "manual" (запрос из панели), "auto" (автоматическое обновление)
+  createdAt DateTime @default(now())
+
+  @@index([accountId])
+  @@index([createdAt])
+  @@map("account_stats")
+}
+
+model Hashtag {
+  id        String   @id @default(uuid())
+  tag       String   @unique // Уникальный хэштег (без #)
+  createdAt DateTime @default(now())
+
+  accounts AccountHashtag[]
+
+  @@index([tag])
+  @@map("hashtags")
+}
+
+model AccountHashtag {
+  id        String @id @default(uuid())
+  accountId String
+  hashtagId String
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  hashtag Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([accountId, hashtagId])
+  @@index([accountId])
+  @@index([hashtagId])
+  @@map("account_hashtags")
+}
+
+model UploadBatch {
+  id            String   @id @default(uuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  status        String   @default("processing") // processing, completed, failed
+  totalVideos   Int
+  totalAccounts Int
+  successCount  Int      @default(0)
+  failedCount   Int      @default(0)
+
+  hashtags    String? @db.Text // Хэштеги для всех видео в батче
+  description String? @db.Text // Описание для всех видео в батче
+
+  videos VideoUpload[]
+
+  @@map("upload_batches")
+}
+
+model VideoUpload {
+  id      String      @id @default(uuid())
+  batchId String
+  batch   UploadBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  accountId String?
+  account   Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  videoFileName String
+  accountIndex  Int
+  accountCookie String  @db.Text
+  proxy         String?
+
+  caption  String? @db.Text
+  hashtags String?
+
+  status       String  @default("pending") // pending, uploading, success, failed
+  uploadedUrl  String?
+  errorMessage String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId])
+  @@index([accountId])
+  @@index([status])
+  @@map("video_uploads")
+}
+
+model StatsProgress {
+  id        String  @id @default(uuid())
+  hashtag   String // Хэштег для которого собирается статистика
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  status       String  @default("pending") // pending, processing, completed, failed
+  progress     Int     @default(0) // Прогресс в процентах (0-100)
+  currentStep  String? // Текущий шаг (например, "Инициализация", "Сбор статистики", "Сбор просмотров")
+  errorMessage String? @db.Text
+
+  followers Int? // Промежуточные результаты
+  following Int?
+  likes     Int?
+  views     Int?
+  username  String?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@index([hashtag])
+  @@index([accountId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("stats_progress")
+}

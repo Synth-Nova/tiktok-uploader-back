@@ -1,0 +1,57 @@
+# Node.js (старые файлы)
+node_modules/
+dist/
+
+# Видео файлы
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.flv
+*.wmv
+
+# Конфигурация и логи
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# TypeScript
+dist/
+*.tsbuildinfo
+
+# Configuration
+config.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+/src/generated/prisma

@@ -1,0 +1,56 @@
+{
+  "name": "tiktok-uploader",
+  "version": "1.0.0",
+  "description": "Автоматическая загрузка видео в TikTok с использованием Selenium",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "yarn build && NODE_ENV=production node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "dev:clean": "yarn queue:clear && ts-node src/server.ts",
+    "clean": "rm -rf dist uploads temp",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "queue:view": "ts-node src/scripts/view-queue.ts",
+    "queue:clear": "ts-node src/scripts/clear-queue.ts",
+    "stats-queue:view": "ts-node src/scripts/view-stats-queue.ts",
+    "stats-queue:clear": "ts-node src/scripts/clear-stats-queue.ts",
+    "redis:flush": "ts-node src/scripts/flush-redis.ts",
+    "chrome:kill": "ts-node src/scripts/kill-chrome.ts"
+  },
+  "keywords": [
+    "tiktok",
+    "uploader",
+    "selenium",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^6.17.0",
+    "@types/adm-zip": "^0.5.7",
+    "@types/bull": "^4.10.4",
+    "@types/cors": "^2.8.19",
+    "@types/dotenv": "^8.2.3",
+    "@types/express": "^5.0.3",
+    "@types/multer": "^2.0.0",
+    "@types/selenium-webdriver": "^4.35.1",
+    "bull": "^4.16.5",
+    "chromedriver": "^141.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "extract-zip": "^2.0.1",
+    "ioredis": "^5.8.1",
+    "multer": "^2.0.2",
+    "prisma": "^6.17.0",
+    "selenium-webdriver": "^4.36.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
