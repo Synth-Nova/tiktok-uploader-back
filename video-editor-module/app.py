@@ -14,6 +14,7 @@ from datetime import datetime
 
 # Импорт подмодулей
 from api.montage import montage_bp
+from api.montage_v2 import montage_v2_bp
 from api.voice_subtitles import voice_subtitles_bp
 from api.avatar import avatar_bp
 
@@ -49,6 +50,7 @@ os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
 
 # Регистрация blueprints (подмодулей)
 app.register_blueprint(montage_bp, url_prefix='/api/montage')
+app.register_blueprint(montage_v2_bp, url_prefix='/api/montage-v2')
 app.register_blueprint(voice_subtitles_bp, url_prefix='/api/voice-subtitles')
 app.register_blueprint(avatar_bp, url_prefix='/api/avatar')
 
