@@ -1,0 +1,168 @@
+{
+  "accounts": [
+    {
+      "id": 1,
+      "username": "lourdesparsons20142",
+      "password": "caewtnwgA!6261",
+      "email": "lourdesparsons2014@hydrofertty.com",
+      "email_password": "caewtnwgA!6261",
+      "country": "us",
+      "proxy": {
+        "host": "us.decodo.com",
+        "port": 10001,
+        "user": "spvzzn2tmc",
+        "password": "gbLZ8rl9y=VlXx37je"
+      }
+    },
+    {
+      "id": 2,
+      "username": "michaelwagner19332",
+      "password": "ehollwixY!8128",
+      "email": "michaelwagner1933@cryobioltty.com",
+      "email_password": "ehollwixY!8128",
+      "country": "us",
+      "proxy": {
+        "host": "us.decodo.com",
+        "port": 10002,
+        "user": "spvzzn2tmc",
+        "password": "gbLZ8rl9y=VlXx37je"
+      }
+    },
+    {
+      "id": 3,
+      "username": "phillipjohnson1999",
+      "password": "mfffmbefY!5255",
+      "email": "phillipjohnson1999@eudiometty.com",
+      "email_password": "mfffmbefY!5255",
+      "country": "us",
+      "proxy": {
+        "host": "us.decodo.com",
+        "port": 10003,
+        "user": "spvzzn2tmc",
+        "password": "gbLZ8rl9y=VlXx37je"
+      }
+    },
+    {
+      "id": 4,
+      "username": "rodneysmith19191",
+      "password": "asbvcvvmY!6131",
+      "email": "rodneysmith1919@neocolotty.com",
+      "email_password": "asbvcvvmY!6131",
+      "country": "us",
+      "proxy": {
+        "host": "us.decodo.com",
+        "port": 10004,
+        "user": "spvzzn2tmc",
+        "password": "gbLZ8rl9y=VlXx37je"
+      }
+    },
+    {
+      "id": 5,
+      "username": "ceciliamotte19001",
+      "password": "mepwfkhiX!4210",
+      "email": "ceciliamotte1900@duodenojejtty.com",
+      "email_password": "mepwfkhiX!4210",
+      "country": "gb",
+      "proxy": {
+        "host": "gb.decodo.com",
+        "port": 30001,
+        "user": "spvzzn2tmc",
+        "password": "gbLZ8rl9y=VlXx37je"
+      }
+    },
+    {
+      "id": 6,
+      "username": "douglasseedorff1944",
+      "password": "dinfpdwaY!3078",
+      "email": "douglasseedorff1944@leukoctty.com",
+      "email_password": "dinfpdwaY!3078",
+      "country": "gb",
+      "proxy": {
+        "host": "gb.decodo.com",
+        "port": 30002,
+        "user": "spvzzn2tmc",
+        "password": "gbLZ8rl9y=VlXx37je"
+      }
+    },
+    {
+      "id": 7,
+      "username": "jameswhite19671",
+      "password": "rvvfvnzaS!8894",
+      "email": "jameswhite1967@pathophtty.com",
+      "email_password": "rvvfvnzaS!8894",
+      "country": "gb",
+      "proxy": {
+        "host": "gb.decodo.com",
+        "port": 30003,
+        "user": "spvzzn2tmc",
+        "password": "gbLZ8rl9y=VlXx37je"
+      }
+    },
+    {
+      "id": 8,
+      "username": "charleshenry19141",
+      "password": "vujlkedeY!6778",
+      "email": "charleshenry1914@sociobitty.com",
+      "email_password": "vujlkedeY!6778",
+      "country": "de",
+      "proxy": {
+        "host": "de.decodo.com",
+        "port": 20001,
+        "user": "spvzzn2tmc",
+        "password": "gbLZ8rl9y=VlXx37je"
+      }
+    },
+    {
+      "id": 9,
+      "username": "arthurlindsay20031",
+      "password": "ogycwedgY!7232",
+      "email": "arthurlindsay2003@maintaitty.com",
+      "email_password": "ogycwedgY!7232",
+      "country": "de",
+      "proxy": {
+        "host": "de.decodo.com",
+        "port": 20002,
+        "user": "spvzzn2tmc",
+        "password": "gbLZ8rl9y=VlXx37je"
+      }
+    },
+    {
+      "id": 10,
+      "username": "janiethompson19151",
+      "password": "czuxpdanS!2107",
+      "email": "janiethompson1915@megalosytty.com",
+      "email_password": "czuxpdanS!2107",
+      "country": "de",
+      "proxy": {
+        "host": "de.decodo.com",
+        "port": 20003,
+        "user": "spvzzn2tmc",
+        "password": "gbLZ8rl9y=VlXx37je"
+      }
+    }
+  ],
+  "proxies": {
+    "us": {
+      "host": "us.decodo.com",
+      "port_range": [10001, 10010],
+      "user": "spvzzn2tmc",
+      "password": "gbLZ8rl9y=VlXx37je"
+    },
+    "gb": {
+      "host": "gb.decodo.com",
+      "port_range": [30001, 30010],
+      "user": "spvzzn2tmc",
+      "password": "gbLZ8rl9y=VlXx37je"
+    },
+    "de": {
+      "host": "de.decodo.com",
+      "port_range": [20001, 20010],
+      "user": "spvzzn2tmc",
+      "password": "gbLZ8rl9y=VlXx37je"
+    }
+  },
+  "email_service": {
+    "url": "https://firstmail.ltd/ru-RU/webmail/login",
+    "domain": "firstmail.ltd"
+  }
+}
