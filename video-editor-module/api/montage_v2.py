@@ -9,7 +9,7 @@
 - Система хранения с автоочисткой старых файлов
 """
 
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, send_from_directory
 import os
 import random
 import subprocess
@@ -409,4 +409,26 @@ def manual_cleanup():
     
     except Exception as e:
         logger.error(f"Error during manual cleanup: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@montage_v2_bp.route('/preview/<filename>', methods=['GET'])
+def preview_temp_shot(filename):
+    """
+    Раздача временных файлов для превью шотов
+    """
+    try:
+        upload_folder = current_app.config['UPLOAD_FOLDER']
+        temp_folder = os.path.join(upload_folder, 'temp_analysis')
+        
+        # Безопасность: проверяем, что файл находится в нужной папке
+        safe_filename = secure_filename(filename)
+        filepath = os.path.join(temp_folder, safe_filename)
+        
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'File not found'}), 404
+        
+        return send_from_directory(temp_folder, safe_filename)
+    
+    except Exception as e:
+        logger.error(f"Error serving preview: {e}")
         return jsonify({'error': str(e)}), 500
