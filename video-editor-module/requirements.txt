@@ -1,0 +1,17 @@
+Flask==3.0.0
+Flask-CORS==4.0.0
+requests==2.31.0
+Werkzeug==3.0.1
+gunicorn==21.2.0
+python-dotenv==1.0.0
+
+# Video processing
+moviepy==1.0.3
+opencv-python==4.8.1.78
+
+# Audio processing (опционально, для Whisper)
+# openai-whisper==20231117
+# Если нужен Whisper локально: pip install openai-whisper
+
+# Deepgram SDK (альтернатива Whisper)
+# deepgram-sdk==3.0.0
