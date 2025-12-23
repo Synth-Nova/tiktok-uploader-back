@@ -104,12 +104,17 @@ def analyze_shots():
         os.makedirs(temp_folder, exist_ok=True)
         
         analyzed_shots = []
+        output_folder = current_app.config['OUTPUT_FOLDER']
         
         for idx, shot in enumerate(shots):
             if shot and allowed_file(shot.filename, ALLOWED_VIDEO_EXTENSIONS):
                 filename = secure_filename(f'temp_{idx}_{shot.filename}')
                 filepath = os.path.join(temp_folder, filename)
                 shot.save(filepath)
+                
+                # Копируем в outputs для доступа через Nginx /video-outputs/
+                output_preview_path = os.path.join(output_folder, f'preview_{filename}')
+                shutil.copy2(filepath, output_preview_path)
                 
                 # Анализ видео
                 info = get_video_info(filepath)
@@ -121,7 +126,8 @@ def analyze_shots():
                     'width': info['width'],
                     'height': info['height'],
                     'fps': round(info['fps'], 2),
-                    'temp_path': filename
+                    'temp_path': filename,
+                    'preview_url': f'/video-outputs/preview_{filename}'
                 })
                 
                 logger.info(f"Analyzed shot {idx}: {shot.filename} - {info['duration']:.2f}s")
