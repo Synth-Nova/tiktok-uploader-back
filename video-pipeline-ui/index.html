@@ -1,0 +1,2350 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SynthNova Video Pipeline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e4e4e4;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid #333;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 1.1em;
+        }
+        
+        /* Pipeline Steps */
+        .pipeline {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            overflow-x: auto;
+            padding: 20px 0;
+        }
+        
+        .step {
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+            padding: 15px;
+            background: #1e1e3f;
+            border-radius: 10px;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .step:hover {
+            transform: translateY(-5px);
+            border-color: #00d4ff;
+        }
+        
+        .step.active {
+            border-color: #00d4ff;
+            background: #252550;
+        }
+        
+        .step.completed {
+            border-color: #00ff88;
+        }
+        
+        .step-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .step-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .step-status {
+            font-size: 0.8em;
+            color: #888;
+        }
+        
+        .step.completed .step-status {
+            color: #00ff88;
+        }
+        
+        /* Arrow between steps */
+        .arrow {
+            display: flex;
+            align-items: center;
+            color: #444;
+            font-size: 1.5em;
+        }
+        
+        /* Main content area */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+        
+        .panel {
+            background: #1e1e3f;
+            border-radius: 15px;
+            padding: 25px;
+        }
+        
+        .panel h2 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 0.9em;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: #16213e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1em;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #00d4ff, #0099cc);
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #333;
+            color: #fff;
+        }
+        
+        .btn-success {
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+            color: #000;
+        }
+        
+        .btn-danger {
+            background: #ff4757;
+            color: #fff;
+        }
+        
+        /* File list */
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #16213e;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .file-item:hover {
+            background: #1a2747;
+        }
+        
+        .file-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-size {
+            color: #888;
+            font-size: 0.9em;
+            margin-left: 15px;
+        }
+        
+        /* Progress */
+        .progress-container {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background: #16213e;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            color: #888;
+        }
+        
+        /* Stats sidebar */
+        .stats-card {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .stats-card h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        
+        .stats-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .stats-label {
+            color: #888;
+            font-size: 0.8em;
+        }
+        
+        /* Log panel */
+        .log-panel {
+            background: #0a0a1a;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85em;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        
+        .log-entry.info { color: #00d4ff; }
+        .log-entry.success { color: #00ff88; }
+        .log-entry.error { color: #ff4757; }
+        .log-entry.warning { color: #ffa502; }
+        
+        /* Presets */
+        .preset-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .preset-card {
+            padding: 15px;
+            background: #16213e;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .preset-card:hover {
+            border-color: #00d4ff;
+        }
+        
+        .preset-card.selected {
+            border-color: #00ff88;
+            background: #1a2747;
+        }
+        
+        .preset-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .preset-desc {
+            font-size: 0.8em;
+            color: #888;
+        }
+        
+        /* Tab navigation */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            color: #00d4ff;
+        }
+        
+        .tab.active {
+            color: #00d4ff;
+            border-bottom-color: #00d4ff;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Sound library */
+        .sound-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #16213e;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        
+        .sound-item:hover {
+            background: #1a2747;
+        }
+        
+        .sound-item.selected {
+            border: 1px solid #00d4ff;
+        }
+        
+        .sound-icon {
+            font-size: 1.5em;
+            margin-right: 15px;
+        }
+        
+        .sound-info {
+            flex: 1;
+        }
+        
+        .sound-name {
+            font-weight: bold;
+        }
+        
+        .sound-duration {
+            color: #888;
+            font-size: 0.85em;
+        }
+        
+        /* API URL config */
+        .api-config {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .api-config input {
+            margin-bottom: 10px;
+        }
+        
+        .api-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+        
+        .api-status.connected {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        
+        .api-status.disconnected {
+            background: rgba(255, 71, 87, 0.2);
+            color: #ff4757;
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: linear-gradient(135deg, #1e1e3f 0%, #16213e 100%);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            border: 2px solid #00d4ff;
+            box-shadow: 0 10px 50px rgba(0, 212, 255, 0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .modal-header h2 {
+            color: #00d4ff;
+            margin: 0;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 2em;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .modal-close:hover {
+            color: #ff4757;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .product-card {
+            background: #0a0a1a;
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .product-card:hover {
+            border-color: #00d4ff;
+            transform: translateY(-3px);
+        }
+        
+        .product-card.selected {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+        
+        .product-country {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+        }
+        
+        .product-name {
+            font-weight: bold;
+            font-size: 0.95em;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .product-price {
+            color: #00ff88;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .product-stock {
+            color: #888;
+            font-size: 0.85em;
+        }
+        
+        .country-filter {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .country-btn {
+            padding: 8px 15px;
+            border-radius: 20px;
+            background: #16213e;
+            border: 1px solid #333;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .country-btn:hover {
+            border-color: #00d4ff;
+        }
+        
+        .country-btn.active {
+            background: #00d4ff;
+            color: #000;
+        }
+        
+        .quick-buy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            background: linear-gradient(90deg, #ff4757, #ff6b81);
+            color: #fff;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 1000px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .pipeline {
+                flex-wrap: wrap;
+            }
+            
+            .step {
+                min-width: calc(33% - 10px);
+                margin-bottom: 10px;
+            }
+            
+            .arrow {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav style="display: flex; gap: 15px; margin-bottom: 20px; padding: 15px; background: #0a0a1a; border-radius: 10px;">
+            <a href="pipeline.html" style="color: #00d4ff; text-decoration: none; padding: 8px 15px; background: #1e1e3f; border-radius: 8px;">🎬 Video Pipeline</a>
+            <a href="accounts.html" style="color: #888; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: all 0.3s;">👥 Аккаунты</a>
+            <a href="/dashboard" style="color: #888; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: all 0.3s;">📊 Dashboard</a>
+        </nav>
+        
+        <header>
+            <h1>🎬 SynthNova Video Pipeline</h1>
+            <p class="subtitle">Длинное видео → Много коротких → TikTok → Статистика</p>
+        </header>
+        
+        <!-- API Configuration -->
+        <div class="api-config">
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 300px;">
+                    <input type="text" id="apiUrl" placeholder="API URL (например: http://localhost:8080)" value="https://8090-iizrsucry9ebg87ccb608-b9b802c4.sandbox.novita.ai">
+                </div>
+                <button class="btn btn-secondary" onclick="testConnection()">🔌 Проверить</button>
+                <span id="apiStatus" class="api-status disconnected">● Не подключено</span>
+            </div>
+        </div>
+        
+        <!-- Pipeline Steps -->
+        <div class="pipeline">
+            <div class="step active" onclick="showStep(1)" id="step1">
+                <div class="step-icon">📹</div>
+                <div class="step-title">1. Нарезка</div>
+                <div class="step-status">Ожидание</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="step" onclick="showStep(2)" id="step2">
+                <div class="step-icon">✨</div>
+                <div class="step-title">2. Уникализация</div>
+                <div class="step-status">Ожидание</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="step" onclick="showStep(3)" id="step3">
+                <div class="step-icon">🎵</div>
+                <div class="step-title">3. Sound ID</div>
+                <div class="step-status">Ожидание</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="step" onclick="showStep(4)" id="step4">
+                <div class="step-icon">📦</div>
+                <div class="step-title">4. Упаковка</div>
+                <div class="step-status">Ожидание</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="step" onclick="showStep(5)" id="step5">
+                <div class="step-icon">🚀</div>
+                <div class="step-title">5. Заливка</div>
+                <div class="step-status">Ожидание</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="step" onclick="showStep(6)" id="step6">
+                <div class="step-icon">📊</div>
+                <div class="step-title">6. Статистика</div>
+                <div class="step-status">Ожидание</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="step" onclick="showStep(7)" id="step7">
+                <div class="step-icon">🛒</div>
+                <div class="step-title">7. Магазин</div>
+                <div class="step-status">DarkShop/PX6</div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <!-- Main Panel -->
+            <div class="panel">
+                <!-- Step 1: Нарезка -->
+                <div class="tab-content active" id="content1">
+                    <h2>📹 Этап 1: Нарезка длинного видео</h2>
+                    
+                    <div class="form-group">
+                        <label>Выберите видео для нарезки</label>
+                        <select id="masterVideo" onchange="updateVideoInfo()">
+                            <option value="">-- Загрузите список видео --</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="loadMasterVideos()" style="margin-top: 10px;">🔄 Обновить список</button>
+                    </div>
+                    
+                    <div id="videoInfo" style="display: none; margin-bottom: 20px; padding: 15px; background: #16213e; border-radius: 10px;">
+                        <p><strong>Длительность:</strong> <span id="videoDuration">-</span></p>
+                        <p><strong>Размер:</strong> <span id="videoSize">-</span></p>
+                        <p><strong>Разрешение:</strong> <span id="videoRes">-</span></p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Длина каждого клипа (секунд)</label>
+                        <input type="number" id="segmentDuration" value="30" min="5" max="180">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Название папки (опционально)</label>
+                        <input type="text" id="folderName" placeholder="Автоматически">
+                    </div>
+                    
+                    <div id="cutPreview" style="margin-bottom: 20px; padding: 15px; background: #16213e; border-radius: 10px;">
+                        <p>📊 Примерное количество клипов: <strong id="estimatedCuts">-</strong></p>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="startCutting()">✂️ Начать нарезку</button>
+                    
+                    <div class="progress-container" id="cutProgress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="cutProgressFill" style="width: 0%">0%</div>
+                        </div>
+                        <p class="progress-text" id="cutProgressText">Обработка...</p>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Уникализация -->
+                <div class="tab-content" id="content2">
+                    <h2>✨ Этап 2: Уникализация видео</h2>
+                    
+                    <div class="form-group">
+                        <label>Выберите папку с видео</label>
+                        <select id="sourceFolder">
+                            <option value="">-- Загрузите список папок --</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="loadFolders('cuts')" style="margin-top: 10px;">🔄 Обновить список</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Пресет уникализации</label>
+                        <div class="preset-cards">
+                            <div class="preset-card" onclick="selectPreset('minimal')">
+                                <div class="preset-name">🔹 Минимальный</div>
+                                <div class="preset-desc">Почти незаметно</div>
+                            </div>
+                            <div class="preset-card selected" onclick="selectPreset('balanced')">
+                                <div class="preset-name">⚖️ Сбалансированный</div>
+                                <div class="preset-desc">Рекомендуется</div>
+                            </div>
+                            <div class="preset-card" onclick="selectPreset('aggressive')">
+                                <div class="preset-name">🔥 Агрессивный</div>
+                                <div class="preset-desc">Максимум изменений</div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="selectedPreset" value="balanced">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Количество версий каждого видео</label>
+                        <input type="number" id="uniqueCount" value="5" min="1" max="50">
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="startUniquify()">✨ Уникализировать</button>
+                    
+                    <div class="progress-container" id="uniqueProgress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="uniqueProgressFill" style="width: 0%">0%</div>
+                        </div>
+                        <p class="progress-text" id="uniqueProgressText">Обработка...</p>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Sound ID -->
+                <div class="tab-content" id="content3">
+                    <h2>🎵 Этап 3: Получить Sound ID</h2>
+                    
+                    <div style="background: #16213e; padding: 20px; border-radius: 10px; margin-bottom: 25px;">
+                        <p style="color: #00d4ff; margin-bottom: 10px;">💡 <strong>Как это работает:</strong></p>
+                        <p style="color: #aaa; line-height: 1.6;">
+                            Вставьте ссылку на звук TikTok → получите Sound ID → 
+                            при заливке TikTok автоматически добавит этот звук к вашим видео.
+                            <br><br>
+                            <strong>Звук НЕ накладывается на видео</strong> — TikTok сам прикрепляет его при публикации.
+                        </p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>URL звука TikTok</label>
+                        <input type="text" id="tiktokSoundUrl" placeholder="https://vt.tiktok.com/... или https://www.tiktok.com/music/...">
+                        <p style="color: #666; font-size: 0.85em; margin-top: 5px;">
+                            Можно вставить ссылку на звук или на видео с нужным звуком
+                        </p>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="parseTiktokSound()">🔍 Получить Sound ID</button>
+                    
+                    <!-- Результат парсинга -->
+                    <div id="parsedSoundInfo" style="display: none; margin-top: 25px; padding: 25px; background: linear-gradient(135deg, #1a2747 0%, #16213e 100%); border-radius: 12px; border: 2px solid #00ff88;">
+                        <h4 style="color: #00ff88; margin-bottom: 20px; font-size: 1.2em;">✅ Sound ID получен!</h4>
+                        
+                        <div style="background: #0a0a1a; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <p style="color: #888; font-size: 0.85em; margin-bottom: 5px;">SOUND ID</p>
+                            <code id="parsedSoundId" style="font-size: 1.3em; color: #00d4ff; word-break: break-all;">-</code>
+                        </div>
+                        
+                        <p><strong>Название:</strong> <span id="parsedSoundName" style="color: #fff;">-</span></p>
+                        
+                        <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" onclick="copySoundId()">📋 Копировать ID</button>
+                            <button class="btn btn-success" onclick="showStep(4)">➡️ Далее: Упаковка</button>
+                        </div>
+                        
+                        <p style="margin-top: 20px; color: #888; font-size: 0.9em; padding: 10px; background: rgba(0,212,255,0.1); border-radius: 6px;">
+                            💡 Sound ID сохранён! На шаге 5 (Заливка) нажмите "📋 Вставить" чтобы использовать его.
+                        </p>
+                    </div>
+                    
+                    <!-- Ручной ввод -->
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #333;">
+                        <h4 style="color: #888; margin-bottom: 15px;">Или введите Sound ID вручную:</h4>
+                        <div class="form-group">
+                            <input type="text" id="manualSoundId" placeholder="7572266043506149392">
+                        </div>
+                        <button class="btn btn-secondary" onclick="saveManualSoundId()">💾 Сохранить ID</button>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Упаковка -->
+                <div class="tab-content" id="content4">
+                    <h2>📦 Этап 4: Упаковка для загрузки</h2>
+                    
+                    <div class="form-group">
+                        <label>Выберите папку</label>
+                        <select id="zipFolder">
+                            <option value="">-- Выберите папку --</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="loadFolders('all', 'zipFolder')" style="margin-top: 10px;">🔄 Обновить</button>
+                    </div>
+                    
+                    <div id="folderInfo" style="margin-bottom: 20px; padding: 15px; background: #16213e; border-radius: 10px;">
+                        <p><strong>Видео:</strong> <span id="folderVideoCount">-</span></p>
+                        <p><strong>Размер:</strong> <span id="folderTotalSize">-</span></p>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="createZip()">📦 Создать ZIP</button>
+                    
+                    <h3 style="margin: 25px 0 15px;">📦 Готовые архивы</h3>
+                    <div class="file-list" id="zipList">
+                        <p style="color: #888; text-align: center; padding: 20px;">Нажмите "Обновить" для загрузки списка</p>
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadZips()">🔄 Обновить</button>
+                </div>
+                
+                <!-- Step 5: Заливка -->
+                <div class="tab-content" id="content5">
+                    <h2>🚀 Этап 5: Заливка в TikTok</h2>
+                    
+                    <!-- Калькулятор ресурсов -->
+                    <div style="background: linear-gradient(135deg, #1a2747 0%, #16213e 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #333;">
+                        <h3 style="color: #00d4ff; margin-bottom: 15px;">📊 Калькулятор ресурсов</h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
+                            <div class="stats-card" style="margin: 0;">
+                                <h4>Видео в ZIP</h4>
+                                <div class="stats-value" id="calcVideos">-</div>
+                            </div>
+                            <div class="stats-card" style="margin: 0;">
+                                <h4>Нужно акков</h4>
+                                <div class="stats-value" id="calcAccountsNeeded">-</div>
+                                <div class="stats-label">макс 6 видео/акк</div>
+                            </div>
+                            <div class="stats-card" style="margin: 0;">
+                                <h4>Доступно акков</h4>
+                                <div class="stats-value" id="calcAccountsAvailable">-</div>
+                            </div>
+                            <div class="stats-card" style="margin: 0;">
+                                <h4>Нужно прокси</h4>
+                                <div class="stats-value" id="calcProxiesNeeded">-</div>
+                                <div class="stats-label">макс 5 акк/прокси</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Статус -->
+                        <div id="resourceStatus" style="padding: 15px; border-radius: 8px; background: rgba(0,255,136,0.1); border: 1px solid #00ff88; display: none;">
+                            <span id="resourceStatusText">✅ Ресурсов достаточно!</span>
+                        </div>
+                        
+                        <!-- Предупреждения -->
+                        <div id="resourceWarning" style="padding: 15px; border-radius: 8px; background: rgba(255,71,87,0.1); border: 1px solid #ff4757; display: none; margin-top: 10px;">
+                            <span id="resourceWarningText">⚠️ Недостаточно ресурсов</span>
+                            <div style="margin-top: 10px;">
+                                <a href="accounts.html" class="btn btn-danger" id="btnBuyAccounts" style="display: none; text-decoration: none;">📥 Перейти к аккаунтам</a>
+                                <button class="btn btn-warning" onclick="showStep(7)" id="btnBuyProxies" style="display: none; background: #ffa502;">🌐 Купить прокси</button>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-secondary" onclick="calculateResources()" style="margin-top: 15px;">🔄 Пересчитать</button>
+                    </div>
+                    
+                    <!-- Выбор аккаунтов -->
+                    <div style="background: #16213e; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h4 style="color: #00d4ff; margin-bottom: 15px;">👥 Аккаунты для заливки</h4>
+                        <div id="accountsList" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
+                            <p style="color: #888;">Загрузка аккаунтов...</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" onclick="loadAccounts()">🔄 Обновить</button>
+                            <button class="btn btn-secondary" onclick="selectAllAccounts()">☑️ Выбрать все</button>
+                            <button class="btn btn-secondary" onclick="deselectAllAccounts()">✖️ Снять все</button>
+                            <a href="accounts.html" class="btn btn-success" style="margin-left: auto; text-decoration: none;">📥 Управление аккаунтами</a>
+                        </div>
+                        <p style="color: #888; font-size: 0.85em; margin-top: 10px;">
+                            ⚠️ Лимиты: макс 6 видео/день на аккаунт, макс 5 аккаунтов на 1 прокси
+                        </p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>TikTok Backend API (твой сервер)</label>
+                        <input type="text" id="tiktokApiUrl" value="https://upl.synthnova.me">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Выберите ZIP архив</label>
+                        <select id="uploadZip">
+                            <option value="">-- Выберите архив --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Описание (caption)</label>
+                        <textarea id="caption" rows="3" placeholder="Описание для видео #fyp #viral"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Sound ID (опционально — звук TikTok)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="uploadSoundId" placeholder="7572266043506149392">
+                            <button class="btn btn-secondary" onclick="loadSavedSoundId()">📋 Вставить</button>
+                        </div>
+                        <p style="color: #888; font-size: 0.85em; margin-top: 5px;">
+                            Получите Sound ID на шаге 3 (вкладка TikTok URL)
+                        </p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Начало звука (секунды)</label>
+                        <input type="number" id="uploadSoundStart" value="0" min="0" step="1" placeholder="С какой секунды начать звук">
+                    </div>
+                    
+                    <button class="btn btn-success" onclick="startUpload()">🚀 Загрузить в TikTok</button>
+                    
+                    <div class="progress-container" id="uploadProgress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="uploadProgressFill" style="width: 0%">0%</div>
+                        </div>
+                        <p class="progress-text" id="uploadProgressText">Загрузка...</p>
+                    </div>
+                </div>
+                
+                <!-- Step 6: Статистика -->
+                <div class="tab-content" id="content6">
+                    <h2>📊 Этап 6: Статистика</h2>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+                        <div class="stats-card">
+                            <h4>Аккаунты</h4>
+                            <div class="stats-value" id="totalAccounts">-</div>
+                            <div class="stats-label">активных</div>
+                        </div>
+                        <div class="stats-card">
+                            <h4>Прокси</h4>
+                            <div class="stats-value" id="totalProxies">-</div>
+                            <div class="stats-label">подключено</div>
+                        </div>
+                        <div class="stats-card">
+                            <h4>Видео</h4>
+                            <div class="stats-value" id="totalVideos">-</div>
+                            <div class="stats-label">загружено</div>
+                        </div>
+                        <div class="stats-card">
+                            <h4>Успешно</h4>
+                            <div class="stats-value" id="successRate">-</div>
+                            <div class="stats-label">процент</div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="loadStats()">🔄 Обновить статистику</button>
+                    <button class="btn btn-secondary" onclick="loadAccountStats()">👥 Аккаунты</button>
+                </div>
+                
+                <!-- Step 7: Магазин -->
+                <div class="tab-content" id="content7">
+                    <h2>🛒 Этап 7: Магазин аккаунтов и прокси</h2>
+                    
+                    <div class="tabs">
+                        <div class="tab active" onclick="showShopTab('accounts')">👥 Аккаунты</div>
+                        <div class="tab" onclick="showShopTab('proxies')">🌐 Прокси (PX6)</div>
+                    </div>
+                    
+                    <!-- Accounts Management -->
+                    <div class="shop-tab-content" id="shopAccounts">
+                        <div style="background: #16213e; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                            <h4 style="color: #00d4ff; margin-bottom: 15px;">👥 Управление аккаунтами</h4>
+                            <p style="color: #888; margin-bottom: 15px;">Импорт, верификация, прогрев и мониторинг аккаунтов TikTok, YouTube, Instagram</p>
+                            <a href="accounts.html" class="btn btn-primary" style="text-decoration: none; display: inline-block;">📥 Открыть менеджер аккаунтов</a>
+                        </div>
+                        
+                        <div style="background: #16213e; padding: 20px; border-radius: 10px;">
+                            <h4 style="color: #00d4ff; margin-bottom: 15px;">📊 Типы аккаунтов</h4>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                                <div style="background: rgba(255,165,2,0.1); padding: 15px; border-radius: 8px; border-left: 3px solid #ffa502;">
+                                    <div style="font-size: 1.5em; margin-bottom: 5px;">🍪</div>
+                                    <div style="font-weight: bold; color: #ffa502;">Cookie</div>
+                                    <div style="color: #888; font-size: 0.85em;">Вход по cookies, быстрая верификация</div>
+                                </div>
+                                <div style="background: rgba(0,212,255,0.1); padding: 15px; border-radius: 8px; border-left: 3px solid #00d4ff;">
+                                    <div style="font-size: 1.5em; margin-bottom: 5px;">🔐</div>
+                                    <div style="font-weight: bold; color: #00d4ff;">Login</div>
+                                    <div style="color: #888; font-size: 0.85em;">Email/пароль + верификация почты</div>
+                                </div>
+                                <div style="background: rgba(123,44,191,0.1); padding: 15px; border-radius: 8px; border-left: 3px solid #a55eea;">
+                                    <div style="font-size: 1.5em; margin-bottom: 5px;">🤖</div>
+                                    <div style="font-weight: bold; color: #a55eea;">Autoreg</div>
+                                    <div style="color: #888; font-size: 0.85em;">Свежие аккаунты, требуют прогрева</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- PX6 Proxies -->
+                    <div class="shop-tab-content" id="shopProxies" style="display: none;">
+                        <div style="background: #16213e; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                            <h4 style="color: #00d4ff; margin-bottom: 15px;">💰 Баланс PX6</h4>
+                            <div class="stats-value" id="px6Balance">-</div>
+                            <div class="stats-label">рублей</div>
+                            <button class="btn btn-secondary" onclick="checkPx6Balance()" style="margin-top: 10px;">🔄 Проверить</button>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Страна прокси</label>
+                            <select id="px6Country">
+                                <option value="us">🇺🇸 США</option>
+                                <option value="ru">🇷🇺 Россия</option>
+                                <option value="de">🇩🇪 Германия</option>
+                                <option value="gb">🇬🇧 Великобритания</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Количество прокси</label>
+                            <input type="number" id="px6Quantity" value="1" min="1" max="50">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Период (дней)</label>
+                            <select id="px6Period">
+                                <option value="7">7 дней</option>
+                                <option value="30" selected>30 дней</option>
+                                <option value="90">90 дней</option>
+                            </select>
+                        </div>
+                        
+                        <button class="btn btn-success" onclick="buyPx6Proxies()">🛒 Купить прокси</button>
+                        
+                        <div style="margin-top: 20px; padding: 15px; background: #0a0a1a; border-radius: 8px;">
+                            <h5 style="color: #888; margin-bottom: 10px;">🌐 Текущие прокси</h5>
+                            <div id="px6ProxiesList" style="max-height: 150px; overflow-y: auto;">
+                                <p style="color: #666;">Список прокси...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Log Panel -->
+                <h3 style="margin-top: 25px; margin-bottom: 15px;">📋 Лог операций</h3>
+                <div class="log-panel" id="logPanel">
+                    <div class="log-entry info">[INFO] Интерфейс загружен. Подключитесь к API.</div>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="panel">
+                <h2>📊 Обзор</h2>
+                
+                <div class="stats-card">
+                    <h4>Video Cutter</h4>
+                    <div id="cutterStats">
+                        <p>Мастер-видео: <strong id="masterCount">-</strong></p>
+                        <p>Папок с нарезками: <strong id="cutsCount">-</strong></p>
+                        <p>Уникализировано: <strong id="uniqueCount2">-</strong></p>
+                    </div>
+                </div>
+                
+                <div class="stats-card">
+                    <h4>Звуки</h4>
+                    <p>В библиотеке: <strong id="soundsCount">-</strong></p>
+                </div>
+                
+                <div class="stats-card">
+                    <h4>Архивы</h4>
+                    <p>ZIP файлов: <strong id="zipsCount">-</strong></p>
+                </div>
+                
+                <button class="btn btn-primary" onclick="refreshAll()" style="width: 100%; margin-top: 15px;">🔄 Обновить всё</button>
+                
+                <hr style="margin: 20px 0; border-color: #333;">
+                
+                <h3 style="margin-bottom: 15px;">🎯 Быстрые действия</h3>
+                
+                <button class="btn btn-secondary" onclick="loadCutterStats()" style="width: 100%; margin-bottom: 10px;">📊 Статистика Cutter</button>
+                <button class="btn btn-secondary" onclick="window.open(document.getElementById('apiUrl').value, '_blank')" style="width: 100%;">🔗 Открыть API</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global state
+        let currentStep = 1;
+        let selectedSound = null;
+        let availableAccounts = [];
+        let selectedAccounts = [];
+        let currentJob = null;
+        let currentEventSource = null;
+        
+        // API URL
+        function getApiUrl() {
+            return document.getElementById('apiUrl').value || 'http://localhost:8080';
+        }
+        
+        // Logging
+        function log(message, type = 'info') {
+            const logPanel = document.getElementById('logPanel');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+            logPanel.appendChild(entry);
+            logPanel.scrollTop = logPanel.scrollHeight;
+        }
+        
+        // Show step
+        function showStep(step) {
+            // Update step indicators
+            document.querySelectorAll('.step').forEach((el, i) => {
+                el.classList.remove('active');
+                if (i + 1 === step) el.classList.add('active');
+            });
+            
+            // Show content
+            document.querySelectorAll('.tab-content').forEach((el, i) => {
+                el.classList.remove('active');
+                if (i + 1 === step) el.classList.add('active');
+            });
+            
+            currentStep = step;
+            
+            // Автозагрузка данных при переходе на шаг
+            if (step === 4) {
+                loadFolders('all', 'zipFolder');
+                loadZips();
+            }
+            if (step === 5) {
+                loadZips();
+            }
+            if (step === 6) {
+                loadStats();
+            }
+        }
+        
+        // Test connection
+        async function testConnection() {
+            const statusEl = document.getElementById('apiStatus');
+            try {
+                const response = await fetch(`${getApiUrl()}/cutter/stats`);
+                if (response.ok) {
+                    statusEl.className = 'api-status connected';
+                    statusEl.textContent = '● Подключено';
+                    log('Подключение к API успешно', 'success');
+                    refreshAll();
+                } else {
+                    throw new Error('API error');
+                }
+            } catch (e) {
+                statusEl.className = 'api-status disconnected';
+                statusEl.textContent = '● Не подключено';
+                log(`Ошибка подключения: ${e.message}`, 'error');
+            }
+        }
+        
+        // Load master videos
+        async function loadMasterVideos() {
+            try {
+                const response = await fetch(`${getApiUrl()}/cutter/list-videos`);
+                const data = await response.json();
+                
+                const select = document.getElementById('masterVideo');
+                select.innerHTML = '<option value="">-- Выберите видео --</option>';
+                
+                if (data.videos) {
+                    data.videos.forEach(v => {
+                        const option = document.createElement('option');
+                        option.value = v.filename;
+                        option.textContent = `${v.filename} (${v.duration_formatted}, ${v.size_mb} MB)`;
+                        option.dataset.duration = v.duration;
+                        option.dataset.size = v.size_mb;
+                        option.dataset.width = v.width;
+                        option.dataset.height = v.height;
+                        select.appendChild(option);
+                    });
+                    document.getElementById('masterCount').textContent = data.videos.length;
+                    log(`Загружено ${data.videos.length} видео`, 'success');
+                }
+            } catch (e) {
+                log(`Ошибка загрузки видео: ${e.message}`, 'error');
+            }
+        }
+        
+        // Update video info
+        function updateVideoInfo() {
+            const select = document.getElementById('masterVideo');
+            const option = select.options[select.selectedIndex];
+            const infoDiv = document.getElementById('videoInfo');
+            
+            if (option && option.value) {
+                document.getElementById('videoDuration').textContent = option.dataset.duration ? formatTime(parseFloat(option.dataset.duration)) : '-';
+                document.getElementById('videoSize').textContent = `${option.dataset.size} MB`;
+                document.getElementById('videoRes').textContent = `${option.dataset.width}x${option.dataset.height}`;
+                infoDiv.style.display = 'block';
+                
+                // Estimate cuts
+                const duration = parseFloat(option.dataset.duration) || 0;
+                const segment = parseInt(document.getElementById('segmentDuration').value) || 30;
+                const estimated = Math.ceil(duration / segment);
+                document.getElementById('estimatedCuts').textContent = estimated;
+            } else {
+                infoDiv.style.display = 'none';
+            }
+        }
+        
+        // Format time
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+        
+        // Start cutting
+        async function startCutting() {
+            const filename = document.getElementById('masterVideo').value;
+            const segmentDuration = parseInt(document.getElementById('segmentDuration').value);
+            const folderName = document.getElementById('folderName').value;
+            
+            if (!filename) {
+                log('Выберите видео для нарезки', 'warning');
+                return;
+            }
+            
+            try {
+                log(`Начинаем нарезку: ${filename}`, 'info');
+                
+                const response = await fetch(`${getApiUrl()}/cutter/cut`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename,
+                        segment_duration: segmentDuration,
+                        folder_name: folderName || undefined
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentJob = data.job_id;
+                    document.getElementById('cutProgress').style.display = 'block';
+                    log(`Задача создана: ${data.job_id}`, 'success');
+                    pollJobStatus(data.job_id, 'cut');
+                } else {
+                    log(`Ошибка: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                log(`Ошибка: ${e.message}`, 'error');
+            }
+        }
+        
+        // Poll job status
+        async function pollJobStatus(jobId, type) {
+            const progressEl = document.getElementById(`${type}ProgressFill`);
+            const textEl = document.getElementById(`${type}ProgressText`);
+            
+            const poll = async () => {
+                try {
+                    const response = await fetch(`${getApiUrl()}/cutter/job/${jobId}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        progressEl.style.width = `${data.progress}%`;
+                        progressEl.textContent = `${data.progress}%`;
+                        textEl.textContent = data.message || 'Обработка...';
+                        
+                        if (data.status === 'completed') {
+                            log(`Задача завершена: ${jobId}`, 'success');
+                            document.getElementById(`step${currentStep}`).classList.add('completed');
+                            document.querySelector(`#step${currentStep} .step-status`).textContent = 'Готово!';
+                            return;
+                        } else if (data.status === 'error') {
+                            log(`Ошибка задачи: ${data.error}`, 'error');
+                            return;
+                        }
+                    }
+                    
+                    setTimeout(poll, 2000);
+                } catch (e) {
+                    log(`Ошибка опроса: ${e.message}`, 'error');
+                }
+            };
+            
+            poll();
+        }
+        
+        // Load folders
+        async function loadFolders(type = 'cuts', targetSelect = 'sourceFolder') {
+            try {
+                const response = await fetch(`${getApiUrl()}/cutter/folders?type=${type}`);
+                const data = await response.json();
+                
+                const select = document.getElementById(targetSelect);
+                select.innerHTML = '<option value="">-- Выберите папку --</option>';
+                
+                if (data.folders) {
+                    data.folders.forEach(f => {
+                        const option = document.createElement('option');
+                        option.value = f.name;
+                        option.textContent = `${f.name} (${f.files_count} файлов, ${f.total_size_mb} MB)`;
+                        select.appendChild(option);
+                    });
+                    
+                    if (type === 'cuts') {
+                        document.getElementById('cutsCount').textContent = data.folders.filter(f => f.type === 'cuts').length;
+                        document.getElementById('uniqueCount2').textContent = data.folders.filter(f => f.type === 'uniquified').length;
+                    }
+                    
+                    log(`Загружено ${data.folders.length} папок`, 'success');
+                }
+            } catch (e) {
+                log(`Ошибка загрузки папок: ${e.message}`, 'error');
+            }
+        }
+        
+        // Select preset
+        function selectPreset(preset) {
+            document.querySelectorAll('.preset-card').forEach(el => el.classList.remove('selected'));
+            event.target.closest('.preset-card').classList.add('selected');
+            document.getElementById('selectedPreset').value = preset;
+        }
+        
+        // Start uniquify
+        async function startUniquify() {
+            const sourceFolder = document.getElementById('sourceFolder').value;
+            const preset = document.getElementById('selectedPreset').value;
+            const count = parseInt(document.getElementById('uniqueCount').value);
+            
+            if (!sourceFolder) {
+                log('Выберите папку с видео', 'warning');
+                return;
+            }
+            
+            try {
+                log(`Начинаем уникализацию: ${sourceFolder}`, 'info');
+                
+                const response = await fetch(`${getApiUrl()}/cutter/uniquify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        source_folder: sourceFolder,
+                        preset,
+                        count
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('uniqueProgress').style.display = 'block';
+                    log(`Задача создана: ${data.job_id}`, 'success');
+                    pollJobStatus(data.job_id, 'unique');
+                } else {
+                    log(`Ошибка: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                log(`Ошибка: ${e.message}`, 'error');
+            }
+        }
+        
+        // Parse TikTok sound URL to get Sound ID
+        let currentSoundId = null;
+        let currentSoundName = null;
+        
+        async function parseTiktokSound() {
+            const url = document.getElementById('tiktokSoundUrl').value.trim();
+            
+            if (!url) {
+                log('Введите URL звука TikTok', 'warning');
+                return;
+            }
+            
+            log(`Парсим Sound ID из URL...`, 'info');
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/cutter/parse-sound-url`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentSoundId = data.sound_id;
+                    currentSoundName = data.sound_name;
+                    
+                    // Показать результат
+                    document.getElementById('parsedSoundInfo').style.display = 'block';
+                    document.getElementById('parsedSoundId').textContent = data.sound_id;
+                    document.getElementById('parsedSoundName').textContent = data.sound_name || 'Неизвестно';
+                    
+                    log(`✅ Sound ID: ${data.sound_id}`, 'success');
+                    log(`🎵 Название: ${data.sound_name || 'Неизвестно'}`, 'info');
+                    
+                    // Сохранить в localStorage для использования при заливке
+                    localStorage.setItem('tiktok_sound_id', data.sound_id);
+                    localStorage.setItem('tiktok_sound_name', data.sound_name || '');
+                    
+                } else {
+                    log(`❌ Не удалось извлечь Sound ID: ${data.error}`, 'error');
+                    document.getElementById('parsedSoundInfo').style.display = 'none';
+                }
+            } catch (e) {
+                log(`❌ Ошибка запроса: ${e.message}`, 'error');
+            }
+        }
+        
+        // Копировать Sound ID в буфер
+        function copySoundId() {
+            if (currentSoundId) {
+                navigator.clipboard.writeText(currentSoundId);
+                log(`📋 Sound ID скопирован: ${currentSoundId}`, 'success');
+            }
+        }
+        
+        // Загрузить сохранённый Sound ID в поле заливки
+        function loadSavedSoundId() {
+            const savedId = localStorage.getItem('tiktok_sound_id');
+            const savedName = localStorage.getItem('tiktok_sound_name');
+            
+            if (savedId) {
+                document.getElementById('uploadSoundId').value = savedId;
+                log(`📋 Sound ID вставлен: ${savedId} (${savedName || 'без названия'})`, 'success');
+            } else {
+                log('⚠️ Сначала получите Sound ID на шаге 3', 'warning');
+            }
+        }
+        
+        // Сохранить вручную введённый Sound ID
+        function saveManualSoundId() {
+            const soundId = document.getElementById('manualSoundId').value.trim();
+            
+            if (!soundId) {
+                log('Введите Sound ID', 'warning');
+                return;
+            }
+            
+            // Проверка что это похоже на ID (только цифры, 15-25 символов)
+            if (!/^\d{15,25}$/.test(soundId)) {
+                log('⚠️ Sound ID должен содержать 15-25 цифр', 'warning');
+                return;
+            }
+            
+            localStorage.setItem('tiktok_sound_id', soundId);
+            localStorage.setItem('tiktok_sound_name', 'Ручной ввод');
+            currentSoundId = soundId;
+            
+            log(`✅ Sound ID сохранён: ${soundId}`, 'success');
+            
+            // Показать подтверждение
+            document.getElementById('parsedSoundInfo').style.display = 'block';
+            document.getElementById('parsedSoundId').textContent = soundId;
+            document.getElementById('parsedSoundName').textContent = 'Введён вручную';
+        }
+        
+        // Select sound
+        function selectSoundItem(filename, element) {
+            document.querySelectorAll('.sound-item').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedSound = filename;
+            log(`Выбран звук: ${filename}`, 'info');
+        }
+        
+        // Volume slider
+        document.getElementById('soundVolume').addEventListener('input', function() {
+            document.getElementById('volumeValue').textContent = this.value;
+        });
+        
+        // Add sound batch
+        async function addSoundBatch() {
+            const sourceFolder = document.getElementById('soundVideoFolder').value;
+            const soundStart = parseFloat(document.getElementById('soundStart').value);
+            const volume = parseFloat(document.getElementById('soundVolume').value);
+            const mixMode = document.getElementById('mixMode').value;
+            
+            if (!sourceFolder) {
+                log('Выберите папку с видео', 'warning');
+                return;
+            }
+            
+            if (!selectedSound) {
+                log('Выберите звук из библиотеки', 'warning');
+                return;
+            }
+            
+            try {
+                log(`Добавляем звук к видео в папке: ${sourceFolder}`, 'info');
+                
+                const response = await fetch(`${getApiUrl()}/cutter/add-sound-batch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        source_folder: sourceFolder,
+                        sound_file: selectedSound,
+                        sound_start: soundStart,
+                        volume,
+                        mix_mode: mixMode
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`Задача создана: ${data.job_id}`, 'success');
+                    pollJobStatus(data.job_id, 'unique');
+                } else {
+                    log(`Ошибка: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                log(`Ошибка: ${e.message}`, 'error');
+            }
+        }
+        
+        // Load ZIPs
+        async function loadZips() {
+            try {
+                const response = await fetch(`${getApiUrl()}/cutter/list-zips`);
+                const data = await response.json();
+                
+                const list = document.getElementById('zipList');
+                const select = document.getElementById('uploadZip');
+                list.innerHTML = '';
+                select.innerHTML = '<option value="">-- Выберите архив --</option>';
+                
+                if (data.zips && data.zips.length > 0) {
+                    data.zips.forEach(z => {
+                        const item = document.createElement('div');
+                        item.className = 'file-item';
+                        item.innerHTML = `
+                            <span class="file-name">📦 ${z.filename}</span>
+                            <span class="file-size">${z.size_mb} MB</span>
+                        `;
+                        list.appendChild(item);
+                        
+                        const option = document.createElement('option');
+                        option.value = z.filename;
+                        option.textContent = `${z.filename} (${z.size_mb} MB)`;
+                        select.appendChild(option);
+                    });
+                    document.getElementById('zipsCount').textContent = data.zips.length;
+                    log(`Загружено ${data.zips.length} архивов`, 'success');
+                } else {
+                    list.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Нет архивов</p>';
+                }
+            } catch (e) {
+                log(`Ошибка загрузки архивов: ${e.message}`, 'error');
+            }
+        }
+        
+        // Create ZIP
+        async function createZip() {
+            const folderName = document.getElementById('zipFolder').value;
+            
+            if (!folderName) {
+                log('Выберите папку для архивации', 'warning');
+                return;
+            }
+            
+            try {
+                log(`Создаём ZIP: ${folderName}`, 'info');
+                
+                const response = await fetch(`${getApiUrl()}/cutter/create-zip/${folderName}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`ZIP создан: ${data.zip_filename} (${data.size_mb} MB)`, 'success');
+                    loadZips();
+                } else {
+                    log(`Ошибка: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                log(`Ошибка: ${e.message}`, 'error');
+            }
+        }
+        
+        // Load cutter stats
+        async function loadCutterStats() {
+            try {
+                const response = await fetch(`${getApiUrl()}/cutter/stats`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('masterCount').textContent = data.masters?.files || 0;
+                    document.getElementById('cutsCount').textContent = data.cuts?.folders || 0;
+                    document.getElementById('uniqueCount2').textContent = data.uniquified?.folders || 0;
+                    log('Статистика обновлена', 'success');
+                }
+            } catch (e) {
+                log(`Ошибка: ${e.message}`, 'error');
+            }
+        }
+        
+        // Refresh all
+        async function refreshAll() {
+            await loadMasterVideos();
+            await loadFolders('all');
+            await loadFolders('all', 'zipFolder');
+            await loadZips();
+            await loadCutterStats();
+        }
+        
+        // Start TikTok upload
+        async function startUpload() {
+            const tiktokApi = document.getElementById('tiktokApiUrl').value;
+            const zipFile = document.getElementById('uploadZip').value;
+            const caption = document.getElementById('caption').value;
+            const soundId = document.getElementById('uploadSoundId').value.trim();
+            const soundStart = parseInt(document.getElementById('uploadSoundStart').value) || 0;
+            
+            if (!zipFile) {
+                log('⚠️ Выберите ZIP архив для загрузки', 'warning');
+                return;
+            }
+            
+            if (!caption) {
+                log('⚠️ Введите описание (caption)', 'warning');
+                return;
+            }
+            
+            if (selectedAccounts.length === 0) {
+                log('⚠️ Выберите аккаунты для заливки', 'warning');
+                return;
+            }
+            
+            log(`👥 Выбрано аккаунтов: ${selectedAccounts.length}`, 'info');
+            
+            // Показать прогресс
+            document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('uploadProgressFill').style.width = '10%';
+            document.getElementById('uploadProgressText').textContent = 'Подготовка...';
+            
+            log(`🚀 Начинаем загрузку: ${zipFile}`, 'info');
+            if (soundId) {
+                log(`🎵 Sound ID: ${soundId}, начало: ${soundStart}с`, 'info');
+            }
+            
+            try {
+                // Backend ожидает multipart/form-data с файлами
+                // Но у нас ZIP на другом сервере (Video Cutter API)
+                // Нужно сначала скачать ZIP, потом отправить на TikTok backend
+                
+                log(`📥 Получаем ZIP файл...`, 'info');
+                document.getElementById('uploadProgressFill').style.width = '20%';
+                
+                // Скачиваем ZIP с Video Cutter API
+                const zipUrl = `${getApiUrl()}/video-outputs/${zipFile}`;
+                const zipResponse = await fetch(zipUrl);
+                
+                if (!zipResponse.ok) {
+                    throw new Error(`Не удалось скачать ZIP: ${zipResponse.status}`);
+                }
+                
+                const zipBlob = await zipResponse.blob();
+                log(`✅ ZIP получен: ${(zipBlob.size / 1024 / 1024).toFixed(2)} MB`, 'success');
+                
+                document.getElementById('uploadProgressFill').style.width = '40%';
+                document.getElementById('uploadProgressText').textContent = 'Создаём файлы аккаунтов...';
+                
+                // Создаём файл accounts.txt из выбранных аккаунтов
+                const selectedAccountsData = availableAccounts.filter(a => selectedAccounts.includes(a.id));
+                const accountsText = selectedAccountsData.map(a => `${a.username}:${a.password}`).join('\n');
+                const accountsBlob = new Blob([accountsText], { type: 'text/plain' });
+                
+                // Создаём файл proxies.txt
+                const proxiesText = selectedAccountsData
+                    .filter(a => a.proxy)
+                    .map(a => `${a.proxy.host}:${a.proxy.port}:${a.proxy.username || ''}:${a.proxy.password || ''}`)
+                    .join('\n');
+                const proxiesBlob = new Blob([proxiesText], { type: 'text/plain' });
+                
+                log(`📝 Аккаунтов: ${selectedAccountsData.length}, Прокси: ${proxiesText.split('\n').filter(p=>p).length}`, 'info');
+                
+                document.getElementById('uploadProgressFill').style.width = '60%';
+                document.getElementById('uploadProgressText').textContent = 'Отправляем на сервер...';
+                
+                // Создаём FormData
+                const formData = new FormData();
+                formData.append('videos', zipBlob, zipFile);
+                formData.append('accounts', accountsBlob, 'accounts.txt');
+                formData.append('proxies', proxiesBlob, 'proxies.txt');
+                formData.append('caption', caption);
+                if (soundId) {
+                    formData.append('sound_id', soundId);
+                    formData.append('sound_start', soundStart.toString());
+                }
+                
+                log(`📤 Отправляем на ${tiktokApi}/api/batch-upload...`, 'info');
+                
+                // Отправляем запрос на TikTok backend
+                const response = await fetch(`${tiktokApi}/api/batch-upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                document.getElementById('uploadProgressFill').style.width = '80%';
+                
+                const data = await response.json();
+                
+                if (data.success || data.batchId || data.data) {
+                    document.getElementById('uploadProgressFill').style.width = '100%';
+                    document.getElementById('uploadProgressText').textContent = 'Загрузка запущена!';
+                    
+                    // Получить batchId из разных возможных мест в ответе
+                    const batchId = data.data?.batchId || data.batchId || data.data?.id || data.id;
+                    const totalVideos = data.data?.totalVideos || data.totalVideos || '?';
+                    
+                    log(`✅ Batch создан: ${batchId}`, 'success');
+                    log(`📊 Видео в очереди: ${totalVideos}`, 'info');
+                    
+                    // Отметить шаг как завершённый
+                    document.getElementById('step5').classList.add('completed');
+                    document.querySelector('#step5 .step-status').textContent = 'В процессе...';
+                    
+                    // Начать отслеживание прогресса
+                    if (batchId && batchId !== 'undefined') {
+                        log(`📡 Начинаю отслеживание прогресса...`, 'info');
+                        startBatchTracking(tiktokApi, batchId);
+                    } else {
+                        // Если batchId не получен, попробуем получить последний батч
+                        log(`⚠️ BatchId не получен, запрашиваем список батчей...`, 'warning');
+                        setTimeout(async () => {
+                            try {
+                                const batchesResp = await fetch(`${tiktokApi}/api/batches`);
+                                const batchesData = await batchesResp.json();
+                                if (batchesData.success && batchesData.data && batchesData.data.length > 0) {
+                                    const latestBatch = batchesData.data[0];
+                                    log(`✅ Найден батч: ${latestBatch.id}`, 'success');
+                                    log(`📊 Статус: ${latestBatch.status}, Видео: ${latestBatch.totalVideos}`, 'info');
+                                    startBatchTracking(tiktokApi, latestBatch.id);
+                                }
+                            } catch (e) {
+                                log(`❌ Не удалось получить список батчей`, 'error');
+                            }
+                        }, 2000);
+                    }
+                } else {
+                    throw new Error(data.error || data.message || 'Неизвестная ошибка');
+                }
+                
+            } catch (e) {
+                document.getElementById('uploadProgressFill').style.width = '0%';
+                document.getElementById('uploadProgressText').textContent = 'Ошибка!';
+                
+                log(`❌ Ошибка загрузки: ${e.message}`, 'error');
+                
+                // Показать подсказку
+                if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+                    log(`💡 Проверьте CORS настройки на сервере`, 'warning');
+                } else if (e.message.includes('DOCTYPE')) {
+                    log(`💡 Endpoint не найден. Проверьте API`, 'warning');
+                }
+            }
+        }
+        
+        // Load stats
+        async function loadStats() {
+            const tiktokApi = document.getElementById('tiktokApiUrl').value;
+            try {
+                const response = await fetch(`${tiktokApi}/api/managed-accounts/stats`);
+                const data = await response.json();
+                
+                document.getElementById('totalAccounts').textContent = data.total || '-';
+                document.getElementById('totalProxies').textContent = data.withProxy || '-';
+                log('Статистика TikTok загружена', 'success');
+            } catch (e) {
+                log(`Ошибка загрузки статистики: ${e.message}`, 'error');
+            }
+        }
+        
+        // Load account stats
+        async function loadAccountStats() {
+            const tiktokApi = document.getElementById('tiktokApiUrl').value;
+            try {
+                log(`📊 Загружаем статистику аккаунтов...`, 'info');
+                const response = await fetch(`${tiktokApi}/api/managed-accounts`);
+                const data = await response.json();
+                
+                if (data.accounts || Array.isArray(data)) {
+                    const accounts = data.accounts || data;
+                    log(`✅ Аккаунтов: ${accounts.length}`, 'success');
+                    
+                    accounts.forEach((acc, i) => {
+                        const status = acc.proxyId ? '✅' : '⚠️';
+                        log(`   ${i+1}. ${acc.username || acc.email} ${status}`, 'info');
+                    });
+                }
+            } catch (e) {
+                log(`❌ Ошибка: ${e.message}`, 'error');
+            }
+        }
+        
+        // Segment duration change
+        document.getElementById('segmentDuration').addEventListener('input', updateVideoInfo);
+        
+        // ==================== BATCH TRACKING ====================
+        
+        function startBatchTracking(apiUrl, batchId) {
+            // Закрыть предыдущее соединение
+            if (currentEventSource) {
+                currentEventSource.close();
+            }
+            
+            // Сначала попробуем polling (более надёжно через CORS)
+            log(`📡 Начинаю отслеживание батча ${batchId.slice(0, 8)}...`, 'info');
+            pollBatchStatus(apiUrl, batchId);
+            
+            // Попробуем также SSE для real-time обновлений
+            const sseUrl = `${apiUrl}/api/batches/${batchId}/stream`;
+            
+            try {
+                currentEventSource = new EventSource(sseUrl);
+                
+                currentEventSource.onopen = () => {
+                    log(`✅ SSE подключено`, 'success');
+                };
+                
+                currentEventSource.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleBatchUpdate(data);
+                    } catch (e) {
+                        log(`📨 ${event.data}`, 'info');
+                    }
+                };
+                
+                currentEventSource.addEventListener('progress', (event) => {
+                    const data = JSON.parse(event.data);
+                    handleBatchUpdate(data);
+                });
+                
+                currentEventSource.addEventListener('complete', (event) => {
+                    const data = JSON.parse(event.data);
+                    log(`🎉 Batch завершён!`, 'success');
+                    log(`📊 Успешно: ${data.successful || '?'}, Ошибок: ${data.failed || '?'}`, 'info');
+                    currentEventSource.close();
+                });
+                
+                currentEventSource.addEventListener('error', (event) => {
+                    if (event.data) {
+                        const data = JSON.parse(event.data);
+                        log(`❌ Ошибка: ${data.message || data.error}`, 'error');
+                    }
+                });
+                
+                currentEventSource.onerror = (error) => {
+                    log(`⚠️ SSE соединение потеряно, переподключение...`, 'warning');
+                    // Попробовать переподключиться через 5 секунд
+                    setTimeout(() => {
+                        if (currentEventSource.readyState === EventSource.CLOSED) {
+                            pollBatchStatus(apiUrl, batchId);
+                        }
+                    }, 5000);
+                };
+                
+            } catch (e) {
+                log(`❌ SSE не поддерживается, используем polling`, 'warning');
+                pollBatchStatus(apiUrl, batchId);
+            }
+        }
+        
+        function handleBatchUpdate(data) {
+            const status = data.status || 'processing';
+            const successCount = data.successCount || data.completed || data.current || 0;
+            const failedCount = data.failedCount || 0;
+            const total = data.total || data.totalVideos || 0;
+            const progress = total > 0 ? Math.round(((successCount + failedCount) / total) * 100) : 0;
+            
+            // Обновить прогресс-бар
+            document.getElementById('uploadProgressFill').style.width = `${progress}%`;
+            document.getElementById('uploadProgressFill').textContent = `${progress}%`;
+            
+            // Показать статус в зависимости от состояния
+            if (status === 'failed') {
+                document.getElementById('uploadProgressText').textContent = `❌ Ошибка обработки батча`;
+                document.getElementById('uploadProgressFill').style.background = 'linear-gradient(90deg, #ff4757, #ff6b81)';
+                log(`❌ Батч завершился с ошибкой`, 'error');
+                log(`📊 Всего видео: ${total}, Успешно: ${successCount}, Ошибок: ${failedCount}`, 'info');
+                if (data.error) {
+                    log(`💡 Причина: ${data.error}`, 'warning');
+                }
+                return;
+            } else if (status === 'completed' || status === 'finished') {
+                document.getElementById('uploadProgressText').textContent = `✅ Готово! ${successCount}/${total} видео`;
+                document.getElementById('uploadProgressFill').style.background = 'linear-gradient(90deg, #00ff88, #00cc6a)';
+                log(`🎉 Батч завершён успешно!`, 'success');
+                log(`📊 Успешно: ${successCount}, Ошибок: ${failedCount}`, 'info');
+                return;
+            } else if (status === 'processing' || status === 'pending') {
+                document.getElementById('uploadProgressText').textContent = `⏳ Обработка: ${successCount + failedCount}/${total} видео`;
+            } else {
+                document.getElementById('uploadProgressText').textContent = `${successCount}/${total} видео загружено`;
+            }
+            
+            // Логировать обновления по видео
+            if (data.videoId || data.filename) {
+                const videoName = data.filename || data.videoId;
+                const videoStatus = data.videoStatus || data.status;
+                if (videoStatus === 'completed' || videoStatus === 'success') {
+                    log(`✅ ${videoName} - загружено`, 'success');
+                } else if (videoStatus === 'failed' || videoStatus === 'error') {
+                    log(`❌ ${videoName} - ошибка: ${data.error || 'неизвестная'}`, 'error');
+                } else {
+                    log(`⏳ ${videoName} - ${videoStatus}`, 'info');
+                }
+            }
+            
+            // Проверить завершение
+            if (status === 'completed' || status === 'finished') {
+                log(`🎉 Все видео обработаны!`, 'success');
+                document.getElementById('uploadProgressText').textContent = 'Готово!';
+                if (currentEventSource) {
+                    currentEventSource.close();
+                }
+            }
+        }
+        
+        // Fallback polling если SSE не работает
+        async function pollBatchStatus(apiUrl, batchId) {
+            try {
+                const response = await fetch(`${apiUrl}/api/batches/${batchId}`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    handleBatchUpdate(data.data);
+                    
+                    // Продолжить polling если не завершено и не failed
+                    const status = data.data.status;
+                    if (status !== 'completed' && status !== 'finished' && status !== 'failed') {
+                        setTimeout(() => pollBatchStatus(apiUrl, batchId), 3000);
+                    }
+                }
+            } catch (e) {
+                log(`⚠️ Polling error: ${e.message}`, 'warning');
+                // Попробовать ещё раз через 5 секунд
+                setTimeout(() => pollBatchStatus(apiUrl, batchId), 5000);
+            }
+        }
+        
+        // Функция для просмотра всех батчей
+        async function loadBatches() {
+            const tiktokApi = document.getElementById('tiktokApiUrl').value;
+            try {
+                const response = await fetch(`${tiktokApi}/api/batches`);
+                const data = await response.json();
+                
+                if (data.success && Array.isArray(data.data)) {
+                    log(`📋 Найдено батчей: ${data.data.length}`, 'info');
+                    data.data.slice(0, 5).forEach((batch, i) => {
+                        log(`   ${i+1}. ${batch.id} - ${batch.status} (${batch.completed || 0}/${batch.total || 0})`, 'info');
+                    });
+                }
+            } catch (e) {
+                log(`❌ Ошибка: ${e.message}`, 'error');
+            }
+        }
+        
+        // ==================== ACCOUNTS & RESOURCES ====================
+        
+        // Load accounts from backend
+        async function loadAccounts() {
+            const tiktokApi = document.getElementById('tiktokApiUrl').value;
+            try {
+                log('📥 Загружаем аккаунты...', 'info');
+                const response = await fetch(`${tiktokApi}/api/managed-accounts`);
+                const data = await response.json();
+                
+                // API возвращает { success: true, data: [...] }
+                if (data.success && Array.isArray(data.data)) {
+                    availableAccounts = data.data;
+                } else if (Array.isArray(data.accounts)) {
+                    availableAccounts = data.accounts;
+                } else if (Array.isArray(data)) {
+                    availableAccounts = data;
+                } else {
+                    availableAccounts = [];
+                }
+                
+                renderAccountsList();
+                calculateResources();
+                
+                log(`✅ Загружено ${availableAccounts.length} аккаунтов`, 'success');
+            } catch (e) {
+                log(`❌ Ошибка загрузки аккаунтов: ${e.message}`, 'error');
+                document.getElementById('accountsList').innerHTML = '<p style="color: #ff4757;">Ошибка загрузки. Проверьте подключение к серверу.</p>';
+            }
+        }
+        
+        // Render accounts list with checkboxes
+        function renderAccountsList() {
+            const container = document.getElementById('accountsList');
+            
+            if (availableAccounts.length === 0) {
+                container.innerHTML = '<p style="color: #888;">Нет доступных аккаунтов. <a href="#" onclick="showStep(7)" style="color: #00d4ff;">Купить в магазине →</a></p>';
+                return;
+            }
+            
+            // Group by proxy
+            const byProxy = {};
+            availableAccounts.forEach(acc => {
+                const proxyId = acc.proxyId || 'no-proxy';
+                if (!byProxy[proxyId]) byProxy[proxyId] = [];
+                byProxy[proxyId].push(acc);
+            });
+            
+            let html = '';
+            Object.entries(byProxy).forEach(([proxyId, accounts]) => {
+                const proxyStatus = proxyId === 'no-proxy' ? '⚠️ Без прокси' : `🌐 Прокси #${proxyId.slice(-4)}`;
+                const proxyColor = proxyId === 'no-proxy' ? '#ff4757' : '#00ff88';
+                const accountsOnProxy = accounts.length;
+                const proxyWarning = accountsOnProxy > 5 ? ' ⚠️ >5 акк!' : '';
+                
+                html += `<div style="margin-bottom: 10px; padding: 10px; background: #0a0a1a; border-radius: 8px;">`;
+                html += `<div style="color: ${proxyColor}; font-size: 0.85em; margin-bottom: 8px;">${proxyStatus} (${accountsOnProxy} акк)${proxyWarning}</div>`;
+                
+                accounts.forEach(acc => {
+                    const checked = selectedAccounts.includes(acc.id) ? 'checked' : '';
+                    const statusIcon = acc.status === 'active' ? '✅' : '⚠️';
+                    const todayUploads = acc.todayUploads || 0;
+                    const canUpload = todayUploads < 6;
+                    const uploadStatus = canUpload ? `${todayUploads}/6` : '❌ лимит';
+                    const disabled = !canUpload ? 'disabled' : '';
+                    
+                    html += `
+                        <label style="display: flex; align-items: center; padding: 5px; cursor: ${canUpload ? 'pointer' : 'not-allowed'}; opacity: ${canUpload ? '1' : '0.5'};">
+                            <input type="checkbox" ${checked} ${disabled} onchange="toggleAccount('${acc.id}')" style="margin-right: 10px;">
+                            <span>${statusIcon} ${acc.username || acc.email}</span>
+                            <span style="margin-left: auto; color: #888; font-size: 0.85em;">${uploadStatus}</span>
+                        </label>
+                    `;
+                });
+                
+                html += `</div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Toggle account selection
+        function toggleAccount(accountId) {
+            const idx = selectedAccounts.indexOf(accountId);
+            if (idx > -1) {
+                selectedAccounts.splice(idx, 1);
+            } else {
+                selectedAccounts.push(accountId);
+            }
+            calculateResources();
+        }
+        
+        // Select all accounts
+        function selectAllAccounts() {
+            selectedAccounts = availableAccounts
+                .filter(acc => (acc.todayUploads || 0) < 6)
+                .map(acc => acc.id);
+            renderAccountsList();
+            calculateResources();
+        }
+        
+        // Deselect all
+        function deselectAllAccounts() {
+            selectedAccounts = [];
+            renderAccountsList();
+            calculateResources();
+        }
+        
+        // Calculate resources needed
+        async function calculateResources() {
+            const tiktokApi = document.getElementById('tiktokApiUrl').value;
+            const zipSelect = document.getElementById('uploadZip');
+            const selectedZip = zipSelect.value;
+            
+            // Get video count from ZIP name or fetch
+            let videoCount = 0;
+            if (selectedZip) {
+                // Try to get from folder info
+                try {
+                    const folderName = selectedZip.replace('.zip', '').replace(/_\d{8}_\d{6}$/, '');
+                    const response = await fetch(`${getApiUrl()}/cutter/folder-files/${folderName}`);
+                    const data = await response.json();
+                    videoCount = data.files?.length || 0;
+                } catch (e) {
+                    // Estimate from filename
+                    videoCount = 5; // default estimate
+                }
+            }
+            
+            document.getElementById('calcVideos').textContent = videoCount || '-';
+            
+            // Calculate accounts needed (max 6 videos per account per day)
+            const accountsNeeded = Math.ceil(videoCount / 6);
+            document.getElementById('calcAccountsNeeded').textContent = accountsNeeded || '-';
+            
+            // Available accounts (that can still upload today)
+            const availableForUpload = availableAccounts.filter(acc => (acc.todayUploads || 0) < 6);
+            document.getElementById('calcAccountsAvailable').textContent = availableForUpload.length;
+            
+            // Calculate proxies needed (max 5 accounts per proxy)
+            const proxiesNeeded = Math.ceil(accountsNeeded / 5);
+            document.getElementById('calcProxiesNeeded').textContent = proxiesNeeded || '-';
+            
+            // Check if we have enough resources
+            const statusDiv = document.getElementById('resourceStatus');
+            const warningDiv = document.getElementById('resourceWarning');
+            const btnBuyAccounts = document.getElementById('btnBuyAccounts');
+            const btnBuyProxies = document.getElementById('btnBuyProxies');
+            
+            const hasEnoughAccounts = availableForUpload.length >= accountsNeeded;
+            const uniqueProxies = new Set(availableAccounts.map(a => a.proxyId).filter(p => p)).size;
+            const hasEnoughProxies = uniqueProxies >= proxiesNeeded;
+            
+            if (hasEnoughAccounts && hasEnoughProxies && videoCount > 0) {
+                statusDiv.style.display = 'block';
+                statusDiv.style.borderColor = '#00ff88';
+                statusDiv.style.background = 'rgba(0,255,136,0.1)';
+                document.getElementById('resourceStatusText').innerHTML = '✅ Ресурсов достаточно для заливки!';
+                warningDiv.style.display = 'none';
+            } else if (videoCount > 0) {
+                statusDiv.style.display = 'none';
+                warningDiv.style.display = 'block';
+                
+                let warnings = [];
+                if (!hasEnoughAccounts) {
+                    warnings.push(`Не хватает ${accountsNeeded - availableForUpload.length} аккаунтов`);
+                    btnBuyAccounts.style.display = 'inline-block';
+                } else {
+                    btnBuyAccounts.style.display = 'none';
+                }
+                
+                if (!hasEnoughProxies) {
+                    warnings.push(`Не хватает ${proxiesNeeded - uniqueProxies} прокси`);
+                    btnBuyProxies.style.display = 'inline-block';
+                } else {
+                    btnBuyProxies.style.display = 'none';
+                }
+                
+                document.getElementById('resourceWarningText').innerHTML = '⚠️ ' + warnings.join(', ');
+            } else {
+                statusDiv.style.display = 'none';
+                warningDiv.style.display = 'none';
+            }
+        }
+        
+        // ==================== SHOP FUNCTIONS ====================
+        
+        function showShopTab(tab) {
+            document.querySelectorAll('#content7 .tabs .tab').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('shopAccounts').style.display = tab === 'accounts' ? 'block' : 'none';
+            document.getElementById('shopProxies').style.display = tab === 'proxies' ? 'block' : 'none';
+        }
+        
+        // DarkShop functions
+        async function checkDarkshopBalance() {
+            const tiktokApi = document.getElementById('tiktokApiUrl').value;
+            try {
+                const response = await fetch(`${tiktokApi}/api/darkshop/status`);
+                const data = await response.json();
+                document.getElementById('darkshopBalance').textContent = data.balance || data.data?.balance || '-';
+                log(`💰 DarkShop баланс: ${data.balance || data.data?.balance}₽`, 'success');
+            } catch (e) {
+                log(`❌ Ошибка DarkShop: ${e.message}`, 'error');
+            }
+        }
+        
+        async function loadDarkshopProducts() {
+            const tiktokApi = document.getElementById('tiktokApiUrl').value;
+            try {
+                log('📥 Загружаем товары DarkShop...', 'info');
+                const response = await fetch(`${tiktokApi}/api/darkshop/products`);
+                const data = await response.json();
+                
+                const select = document.getElementById('darkshopProduct');
+                select.innerHTML = '<option value="">-- Выберите товар --</option>';
+                
+                const products = data.products || data.data || [];
+                products.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = `${p.name} - ${p.price}₽ (в наличии: ${p.count || p.quantity || '?'})`;
+                    select.appendChild(option);
+                });
+                
+                log(`✅ Загружено ${products.length} товаров`, 'success');
+            } catch (e) {
+                log(`❌ Ошибка загрузки товаров: ${e.message}`, 'error');
+            }
+        }
+        
+        async function buyDarkshopAccounts() {
+            const tiktokApi = document.getElementById('tiktokApiUrl').value;
+            const productId = document.getElementById('darkshopProduct').value;
+            const quantity = document.getElementById('darkshopQuantity').value;
+            
+            if (!productId) {
+                log('⚠️ Выберите товар', 'warning');
+                return;
+            }
+            
+            try {
+                log(`🛒 Покупаем ${quantity} аккаунтов...`, 'info');
+                const response = await fetch(`${tiktokApi}/api/darkshop/purchase`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId, quantity: parseInt(quantity) })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`✅ Куплено ${quantity} аккаунтов!`, 'success');
+                    loadAccounts(); // Refresh accounts
+                    checkDarkshopBalance(); // Update balance
+                } else {
+                    log(`❌ Ошибка покупки: ${data.error || data.message}`, 'error');
+                }
+            } catch (e) {
+                log(`❌ Ошибка: ${e.message}`, 'error');
+            }
+        }
+        
+        // PX6 functions
+        async function checkPx6Balance() {
+            const tiktokApi = document.getElementById('tiktokApiUrl').value;
+            try {
+                const response = await fetch(`${tiktokApi}/api/px6/status`);
+                const data = await response.json();
+                document.getElementById('px6Balance').textContent = data.balance || data.data?.balance || '-';
+                log(`💰 PX6 баланс: ${data.balance || data.data?.balance}₽`, 'success');
+            } catch (e) {
+                log(`❌ Ошибка PX6: ${e.message}`, 'error');
+            }
+        }
+        
+        async function buyPx6Proxies() {
+            const tiktokApi = document.getElementById('tiktokApiUrl').value;
+            const country = document.getElementById('px6Country').value;
+            const quantity = document.getElementById('px6Quantity').value;
+            const period = document.getElementById('px6Period').value;
+            
+            try {
+                log(`🛒 Покупаем ${quantity} прокси (${country}, ${period} дней)...`, 'info');
+                const response = await fetch(`${tiktokApi}/api/px6/buy`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ country, quantity: parseInt(quantity), period: parseInt(period) })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`✅ Куплено ${quantity} прокси!`, 'success');
+                    checkPx6Balance();
+                    loadPx6Proxies();
+                } else {
+                    log(`❌ Ошибка покупки: ${data.error || data.message}`, 'error');
+                }
+            } catch (e) {
+                log(`❌ Ошибка: ${e.message}`, 'error');
+            }
+        }
+        
+        // Load current proxies list
+        async function loadPx6Proxies() {
+            const tiktokApi = document.getElementById('tiktokApiUrl').value;
+            try {
+                const response = await fetch(`${tiktokApi}/api/proxies`);
+                const data = await response.json();
+                
+                const container = document.getElementById('px6ProxiesList');
+                const proxies = data.data || data.proxies || data || [];
+                
+                if (Array.isArray(proxies) && proxies.length > 0) {
+                    container.innerHTML = proxies.map(p => `
+                        <div style="padding: 8px; background: #16213e; border-radius: 6px; margin-bottom: 5px; font-size: 0.9em;">
+                            <span style="color: ${p.status === 'working' ? '#00ff88' : '#ffa502'};">●</span>
+                            ${p.host}:${p.port} 
+                            <span style="color: #888;">(${p.country || 'US'})</span>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p style="color: #888;">Нет прокси</p>';
+                }
+            } catch (e) {
+                // Ignore errors
+            }
+        }
+        
+        // Auto-load data when entering steps
+        const originalShowStep = showStep;
+        showStep = function(step) {
+            originalShowStep(step);
+            if (step === 5) {
+                loadAccounts();
+            }
+            if (step === 7) {
+                checkDarkshopBalance();
+                checkPx6Balance();
+                loadDarkshopProducts();
+                loadPx6Proxies();
+            }
+        };
+        
+        // Initial log
+        log('Укажите URL API и нажмите "Проверить" для начала работы', 'info');
+        
+    </script>
+    
+
+</body>
+</html>

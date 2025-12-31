@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SynthNova - Управление аккаунтами</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e4e4e4;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #333;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2em;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header-stats {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+        
+        .stat-label {
+            font-size: 0.85em;
+            color: #888;
+        }
+        
+        /* Platform Tabs */
+        .platform-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .platform-tab {
+            padding: 15px 30px;
+            background: #1e1e3f;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1em;
+        }
+        
+        .platform-tab:hover {
+            border-color: #00d4ff;
+            transform: translateY(-2px);
+        }
+        
+        .platform-tab.active {
+            border-color: #00d4ff;
+            background: #252550;
+        }
+        
+        .platform-tab .icon {
+            font-size: 1.5em;
+        }
+        
+        .platform-tab .count {
+            background: #00d4ff;
+            color: #000;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 25px;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background: #1e1e3f;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .sidebar h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        
+        /* Filters */
+        .filter-group {
+            margin-bottom: 20px;
+        }
+        
+        .filter-group label {
+            display: block;
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 10px;
+            background: #16213e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.95em;
+        }
+        
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+        
+        /* Status Filter Buttons */
+        .status-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .status-btn {
+            padding: 6px 12px;
+            background: #16213e;
+            border: 1px solid #333;
+            border-radius: 15px;
+            color: #888;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .status-btn:hover {
+            border-color: #00d4ff;
+            color: #fff;
+        }
+        
+        .status-btn.active {
+            background: #00d4ff;
+            color: #000;
+            border-color: #00d4ff;
+        }
+        
+        .status-btn.status-new { border-left: 3px solid #ffa502; }
+        .status-btn.status-verifying { border-left: 3px solid #00d4ff; }
+        .status-btn.status-verified { border-left: 3px solid #00ff88; }
+        .status-btn.status-warming { border-left: 3px solid #ff6b81; }
+        .status-btn.status-ready { border-left: 3px solid #7bed9f; }
+        .status-btn.status-working { border-left: 3px solid #70a1ff; }
+        .status-btn.status-dead { border-left: 3px solid #ff4757; }
+        .status-btn.status-banned { border-left: 3px solid #ff4757; }
+        
+        /* Quick Actions */
+        .quick-actions {
+            margin-top: 25px;
+        }
+        
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #16213e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .action-btn:hover {
+            background: #1a2747;
+            border-color: #00d4ff;
+        }
+        
+        .action-btn.primary {
+            background: linear-gradient(90deg, #00d4ff, #0099cc);
+            border: none;
+            justify-content: center;
+        }
+        
+        .action-btn.success {
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+            border: none;
+            color: #000;
+            justify-content: center;
+        }
+        
+        .action-btn.danger {
+            background: #ff4757;
+            border: none;
+            justify-content: center;
+        }
+        
+        /* Content Area */
+        .content-area {
+            background: #1e1e3f;
+            border-radius: 15px;
+            padding: 25px;
+        }
+        
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .toolbar-right {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: #16213e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 0 15px;
+        }
+        
+        .search-box input {
+            background: none;
+            border: none;
+            color: #fff;
+            padding: 10px;
+            width: 250px;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #00d4ff, #0099cc);
+            color: #fff;
+        }
+        
+        .btn-secondary {
+            background: #333;
+            color: #fff;
+        }
+        
+        .btn-success {
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+            color: #000;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Accounts Table */
+        .accounts-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .accounts-table th,
+        .accounts-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        
+        .accounts-table th {
+            background: #16213e;
+            color: #00d4ff;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        
+        .accounts-table tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+        
+        .accounts-table .checkbox-cell {
+            width: 40px;
+        }
+        
+        /* Account Type Badge */
+        .type-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .type-cookie {
+            background: rgba(255, 165, 2, 0.2);
+            color: #ffa502;
+        }
+        
+        .type-login {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+        
+        .type-autoreg {
+            background: rgba(123, 44, 191, 0.2);
+            color: #a55eea;
+        }
+        
+        /* Status Badge */
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .status-new { background: rgba(255, 165, 2, 0.2); color: #ffa502; }
+        .status-verifying { background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
+        .status-verified { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .status-warming { background: rgba(255, 107, 129, 0.2); color: #ff6b81; }
+        .status-ready { background: rgba(123, 237, 159, 0.2); color: #7bed9f; }
+        .status-working { background: rgba(112, 161, 255, 0.2); color: #70a1ff; }
+        .status-dead { background: rgba(255, 71, 87, 0.2); color: #ff4757; }
+        .status-banned { background: rgba(255, 71, 87, 0.2); color: #ff4757; }
+        
+        /* Account Actions */
+        .account-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .account-actions button {
+            padding: 5px 10px;
+            background: #16213e;
+            border: 1px solid #333;
+            border-radius: 5px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .account-actions button:hover {
+            background: #1a2747;
+            color: #fff;
+            border-color: #00d4ff;
+        }
+        
+        /* Table container with scroll */
+        .table-container {
+            max-height: calc(100vh - 400px);
+            overflow-y: auto;
+        }
+        
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #333;
+        }
+        
+        .pagination-info {
+            color: #888;
+        }
+        
+        .pagination-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .pagination-buttons button {
+            padding: 8px 15px;
+            background: #16213e;
+            border: 1px solid #333;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+        }
+        
+        .pagination-buttons button:hover {
+            border-color: #00d4ff;
+        }
+        
+        .pagination-buttons button.active {
+            background: #00d4ff;
+            color: #000;
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: linear-gradient(135deg, #1e1e3f 0%, #16213e 100%);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            border: 2px solid #00d4ff;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .modal-header h2 {
+            color: #00d4ff;
+            margin: 0;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 2em;
+            cursor: pointer;
+        }
+        
+        .modal-close:hover {
+            color: #ff4757;
+        }
+        
+        /* Import Form */
+        .import-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .import-tab {
+            padding: 10px 20px;
+            background: #16213e;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .import-tab:hover {
+            border-color: #00d4ff;
+            color: #fff;
+        }
+        
+        .import-tab.active {
+            background: #00d4ff;
+            color: #000;
+        }
+        
+        .import-content {
+            display: none;
+        }
+        
+        .import-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #aaa;
+            margin-bottom: 8px;
+        }
+        
+        .form-group textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            background: #16213e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-family: monospace;
+            resize: vertical;
+        }
+        
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+        
+        .format-hint {
+            background: #0a0a1a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .format-hint code {
+            color: #00ff88;
+            font-family: monospace;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+        
+        .empty-state .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav style="display: flex; gap: 15px; margin-bottom: 20px; padding: 15px; background: #0a0a1a; border-radius: 10px;">
+            <a href="pipeline.html" style="color: #888; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: all 0.3s;">🎬 Video Pipeline</a>
+            <a href="accounts.html" style="color: #00d4ff; text-decoration: none; padding: 8px 15px; background: #1e1e3f; border-radius: 8px;">👥 Аккаунты</a>
+            <a href="/dashboard" style="color: #888; text-decoration: none; padding: 8px 15px; border-radius: 8px; transition: all 0.3s;">📊 Dashboard</a>
+        </nav>
+        
+        <!-- Header -->
+        <header>
+            <div>
+                <h1>👥 Управление аккаунтами</h1>
+                <p style="color: #888; margin-top: 5px;">TikTok • YouTube • Instagram</p>
+            </div>
+            <div class="header-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalAccounts">0</div>
+                    <div class="stat-label">Всего</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="readyAccounts" style="color: #00ff88;">0</div>
+                    <div class="stat-label">Готовы</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="warmingAccounts" style="color: #ff6b81;">0</div>
+                    <div class="stat-label">Прогрев</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="deadAccounts" style="color: #ff4757;">0</div>
+                    <div class="stat-label">Мёртвые</div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Platform Tabs -->
+        <div class="platform-tabs">
+            <div class="platform-tab active" onclick="switchPlatform('tiktok')">
+                <span class="icon">🎵</span>
+                <span>TikTok</span>
+                <span class="count" id="tiktokCount">0</span>
+            </div>
+            <div class="platform-tab" onclick="switchPlatform('youtube')">
+                <span class="icon">📺</span>
+                <span>YouTube</span>
+                <span class="count" id="youtubeCount">0</span>
+            </div>
+            <div class="platform-tab" onclick="switchPlatform('instagram')">
+                <span class="icon">📸</span>
+                <span>Instagram</span>
+                <span class="count" id="instagramCount">0</span>
+            </div>
+        </div>
+        
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <h3>🔍 Фильтры</h3>
+                
+                <div class="filter-group">
+                    <label>Тип аккаунта</label>
+                    <select id="filterType" onchange="applyFilters()">
+                        <option value="all">Все типы</option>
+                        <option value="cookie">🍪 Cookie</option>
+                        <option value="login">🔐 Login</option>
+                        <option value="autoreg">🤖 Autoreg</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Статус</label>
+                    <div class="status-filters">
+                        <button class="status-btn status-new active" onclick="toggleStatusFilter('all', this)">Все</button>
+                        <button class="status-btn status-new" onclick="toggleStatusFilter('new', this)">Новые</button>
+                        <button class="status-btn status-verifying" onclick="toggleStatusFilter('verifying', this)">Проверка</button>
+                        <button class="status-btn status-verified" onclick="toggleStatusFilter('verified', this)">Проверены</button>
+                        <button class="status-btn status-warming" onclick="toggleStatusFilter('warming', this)">Прогрев</button>
+                        <button class="status-btn status-ready" onclick="toggleStatusFilter('ready', this)">Готовы</button>
+                        <button class="status-btn status-working" onclick="toggleStatusFilter('working', this)">Работают</button>
+                        <button class="status-btn status-dead" onclick="toggleStatusFilter('dead', this)">Мёртвые</button>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Страна</label>
+                    <select id="filterCountry" onchange="applyFilters()">
+                        <option value="all">Все страны</option>
+                        <option value="US">🇺🇸 США</option>
+                        <option value="UK">🇬🇧 Великобритания</option>
+                        <option value="DE">🇩🇪 Германия</option>
+                        <option value="FR">🇫🇷 Франция</option>
+                        <option value="RU">🇷🇺 Россия</option>
+                    </select>
+                </div>
+                
+                <div class="quick-actions">
+                    <h3 style="color: #00d4ff; margin-bottom: 15px;">⚡ Быстрые действия</h3>
+                    <button class="action-btn primary" onclick="openImportModal()">
+                        ➕ Импорт аккаунтов
+                    </button>
+                    <button class="action-btn success" onclick="verifySelected()">
+                        ✅ Проверить выбранные
+                    </button>
+                    <button class="action-btn" onclick="startWarming()">
+                        🔥 Запустить прогрев
+                    </button>
+                    <button class="action-btn" onclick="exportAccounts()">
+                        📤 Экспорт
+                    </button>
+                    <button class="action-btn danger" onclick="deleteSelected()">
+                        🗑️ Удалить выбранные
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Toolbar -->
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                            Выбрать все
+                        </label>
+                        <span id="selectedCount" style="color: #888;">Выбрано: 0</span>
+                    </div>
+                    <div class="toolbar-right">
+                        <div class="search-box">
+                            <span>🔍</span>
+                            <input type="text" id="searchInput" placeholder="Поиск по email, username..." oninput="applyFilters()">
+                        </div>
+                        <button class="btn btn-secondary" onclick="loadAccounts()">🔄 Обновить</button>
+                        <button class="btn btn-primary" onclick="openImportModal()">➕ Импорт</button>
+                    </div>
+                </div>
+                
+                <!-- Table Container -->
+                <div class="table-container">
+                    <table class="accounts-table">
+                        <thead>
+                            <tr>
+                                <th class="checkbox-cell"></th>
+                                <th>Аккаунт</th>
+                                <th>Тип</th>
+                                <th>Статус</th>
+                                <th>Страна</th>
+                                <th>Прокси</th>
+                                <th>Последняя активность</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accountsTableBody">
+                            <!-- Accounts will be loaded here -->
+                        </tbody>
+                    </table>
+                    
+                    <!-- Empty State -->
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <div class="icon">📭</div>
+                        <h3>Нет аккаунтов</h3>
+                        <p>Импортируйте аккаунты чтобы начать работу</p>
+                        <button class="btn btn-primary" style="margin-top: 20px;" onclick="openImportModal()">
+                            ➕ Импортировать аккаунты
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="pagination">
+                    <div class="pagination-info">
+                        Показано <strong id="showingFrom">0</strong>-<strong id="showingTo">0</strong> из <strong id="totalItems">0</strong>
+                    </div>
+                    <div class="pagination-buttons">
+                        <button onclick="prevPage()">←</button>
+                        <button class="active">1</button>
+                        <button onclick="nextPage()">→</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Import Modal -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>➕ Импорт аккаунтов</h2>
+                <button class="modal-close" onclick="closeImportModal()">×</button>
+            </div>
+            
+            <!-- Platform Selection -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #888; margin-bottom: 8px;">Платформа</label>
+                <select id="importPlatform" style="width: 100%; padding: 12px; background: #16213e; border: 1px solid #333; border-radius: 8px; color: #fff;">
+                    <option value="tiktok">🎵 TikTok</option>
+                    <option value="youtube">📺 YouTube</option>
+                    <option value="instagram">📸 Instagram</option>
+                </select>
+            </div>
+            
+            <!-- Import Type Tabs -->
+            <div class="import-tabs">
+                <div class="import-tab active" onclick="switchImportTab('cookie')">🍪 Cookie</div>
+                <div class="import-tab" onclick="switchImportTab('login')">🔐 Login</div>
+                <div class="import-tab" onclick="switchImportTab('autoreg')">🤖 Autoreg</div>
+            </div>
+            
+            <!-- Cookie Import -->
+            <div class="import-content active" id="importCookie">
+                <div class="form-group">
+                    <label>Вставьте аккаунты с cookies (по одному на строку)</label>
+                    <textarea id="cookieData" placeholder="Вставьте данные аккаунтов..."></textarea>
+                    <div class="format-hint">
+                        <strong>Формат:</strong><br>
+                        <code>email:password:cookies_json</code><br>
+                        <code>username:password:sessionid</code><br>
+                        или просто JSON с cookies
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Login Import -->
+            <div class="import-content" id="importLogin">
+                <div class="form-group">
+                    <label>Вставьте аккаунты (по одному на строку)</label>
+                    <textarea id="loginData" placeholder="email:password:email_password&#10;или&#10;email:password"></textarea>
+                    <div class="format-hint">
+                        <strong>Формат:</strong><br>
+                        <code>email:password</code><br>
+                        <code>email:password:email_password</code><br>
+                        <code>email:password:email_password:2fa_code</code>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Autoreg Import -->
+            <div class="import-content" id="importAutoreg">
+                <div class="form-group">
+                    <label>Вставьте автореги (по одному на строку)</label>
+                    <textarea id="autoregData" placeholder="email:password&#10;или&#10;email:password:backup_code"></textarea>
+                    <div class="format-hint">
+                        <strong>Формат:</strong><br>
+                        <code>email:password</code><br>
+                        <code>email:password:backup_code</code>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Country Selection -->
+            <div class="form-group">
+                <label>Страна аккаунтов</label>
+                <select id="importCountry" style="width: 100%; padding: 12px; background: #16213e; border: 1px solid #333; border-radius: 8px; color: #fff;">
+                    <option value="US">🇺🇸 США</option>
+                    <option value="UK">🇬🇧 Великобритания</option>
+                    <option value="DE">🇩🇪 Германия</option>
+                    <option value="FR">🇫🇷 Франция</option>
+                    <option value="RU">🇷🇺 Россия</option>
+                    <option value="OTHER">🌍 Другая</option>
+                </select>
+            </div>
+            
+            <!-- Import Button -->
+            <button class="btn btn-success" style="width: 100%; padding: 15px; font-size: 1.1em;" onclick="importAccounts()">
+                📥 Импортировать
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // ==================== STATE ====================
+        let currentPlatform = 'tiktok';
+        let currentType = 'all';
+        let currentStatus = 'all';
+        let currentPage = 1;
+        let selectedAccounts = new Set();
+        let allAccounts = [];
+        
+        const API_URL = 'https://upl.synthnova.me';
+        
+        // ==================== PLATFORM ====================
+        function switchPlatform(platform) {
+            currentPlatform = platform;
+            
+            document.querySelectorAll('.platform-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.closest('.platform-tab').classList.add('active');
+            
+            loadAccounts();
+        }
+        
+        // ==================== FILTERS ====================
+        function toggleStatusFilter(status, btn) {
+            currentStatus = status;
+            
+            document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            applyFilters();
+        }
+        
+        function applyFilters() {
+            const type = document.getElementById('filterType').value;
+            const country = document.getElementById('filterCountry').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            
+            currentType = type;
+            
+            let filtered = allAccounts.filter(acc => {
+                if (type !== 'all' && acc.type !== type) return false;
+                if (currentStatus !== 'all' && acc.status !== currentStatus) return false;
+                if (country !== 'all' && acc.country !== country) return false;
+                if (search && !acc.email?.toLowerCase().includes(search) && !acc.username?.toLowerCase().includes(search)) return false;
+                return true;
+            });
+            
+            renderAccounts(filtered);
+        }
+        
+        // ==================== ACCOUNTS ====================
+        async function loadAccounts() {
+            try {
+                const response = await fetch(`${API_URL}/api/managed-accounts?platform=${currentPlatform}`);
+                const data = await response.json();
+                
+                allAccounts = data.data || data.accounts || data || [];
+                
+                updateStats();
+                applyFilters();
+                
+            } catch (e) {
+                console.error('Error loading accounts:', e);
+                allAccounts = [];
+                renderAccounts([]);
+            }
+        }
+        
+        function renderAccounts(accounts) {
+            const tbody = document.getElementById('accountsTableBody');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (accounts.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            tbody.innerHTML = accounts.map(acc => `
+                <tr>
+                    <td class="checkbox-cell">
+                        <input type="checkbox" ${selectedAccounts.has(acc.id) ? 'checked' : ''} 
+                               onchange="toggleSelect('${acc.id}')">
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 40px; height: 40px; background: #16213e; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                ${getPlatformIcon(acc.platform)}
+                            </div>
+                            <div>
+                                <div style="font-weight: bold;">${acc.username || acc.email || 'N/A'}</div>
+                                <div style="color: #888; font-size: 0.85em;">${acc.email || ''}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="type-badge type-${acc.type || 'login'}">${getTypeName(acc.type)}</span></td>
+                    <td><span class="status-badge status-${acc.status || 'new'}">${getStatusName(acc.status)}</span></td>
+                    <td>${getCountryFlag(acc.country)} ${acc.country || 'N/A'}</td>
+                    <td>${acc.proxyId ? '✅' : '❌'}</td>
+                    <td style="color: #888;">${formatDate(acc.lastActionAt)}</td>
+                    <td>
+                        <div class="account-actions">
+                            <button onclick="verifyAccount('${acc.id}')" title="Проверить">✅</button>
+                            <button onclick="editAccount('${acc.id}')" title="Редактировать">✏️</button>
+                            <button onclick="deleteAccount('${acc.id}')" title="Удалить">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            
+            updatePagination(accounts.length);
+        }
+        
+        function updateStats() {
+            const total = allAccounts.length;
+            const ready = allAccounts.filter(a => a.status === 'ready').length;
+            const warming = allAccounts.filter(a => a.status === 'warming').length;
+            const dead = allAccounts.filter(a => a.status === 'dead' || a.status === 'banned').length;
+            
+            document.getElementById('totalAccounts').textContent = total;
+            document.getElementById('readyAccounts').textContent = ready;
+            document.getElementById('warmingAccounts').textContent = warming;
+            document.getElementById('deadAccounts').textContent = dead;
+            
+            // Update platform counts
+            document.getElementById('tiktokCount').textContent = allAccounts.filter(a => a.platform === 'tiktok').length || total;
+        }
+        
+        // ==================== IMPORT ====================
+        function openImportModal() {
+            document.getElementById('importModal').classList.add('active');
+        }
+        
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('active');
+        }
+        
+        function switchImportTab(type) {
+            document.querySelectorAll('.import-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.import-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('import' + type.charAt(0).toUpperCase() + type.slice(1)).classList.add('active');
+        }
+        
+        async function importAccounts() {
+            const platform = document.getElementById('importPlatform').value;
+            const country = document.getElementById('importCountry').value;
+            
+            // Get active tab
+            const activeTab = document.querySelector('.import-tab.active').textContent.toLowerCase();
+            let data, type;
+            
+            if (activeTab.includes('cookie')) {
+                data = document.getElementById('cookieData').value;
+                type = 'cookie';
+            } else if (activeTab.includes('login')) {
+                data = document.getElementById('loginData').value;
+                type = 'login';
+            } else {
+                data = document.getElementById('autoregData').value;
+                type = 'autoreg';
+            }
+            
+            if (!data.trim()) {
+                alert('Введите данные для импорта');
+                return;
+            }
+            
+            const lines = data.trim().split('\n').filter(l => l.trim());
+            const accounts = lines.map(line => parseAccountLine(line, type));
+            
+            try {
+                const response = await fetch(`${API_URL}/api/managed-accounts/import`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        platform,
+                        type,
+                        country,
+                        accounts
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ Импортировано ${result.imported || accounts.length} аккаунтов`);
+                    closeImportModal();
+                    loadAccounts();
+                } else {
+                    alert(`❌ Ошибка: ${result.error || 'Неизвестная ошибка'}`);
+                }
+            } catch (e) {
+                alert(`❌ Ошибка: ${e.message}`);
+            }
+        }
+        
+        function parseAccountLine(line, type) {
+            const parts = line.split(':');
+            
+            return {
+                email: parts[0] || '',
+                password: parts[1] || '',
+                emailPassword: parts[2] || '',
+                backupCode: parts[3] || '',
+                cookies: type === 'cookie' ? (parts[2] || line) : null
+            };
+        }
+        
+        // ==================== ACTIONS ====================
+        function toggleSelect(id) {
+            if (selectedAccounts.has(id)) {
+                selectedAccounts.delete(id);
+            } else {
+                selectedAccounts.add(id);
+            }
+            updateSelectedCount();
+        }
+        
+        function toggleSelectAll() {
+            const checked = document.getElementById('selectAll').checked;
+            
+            if (checked) {
+                allAccounts.forEach(acc => selectedAccounts.add(acc.id));
+            } else {
+                selectedAccounts.clear();
+            }
+            
+            applyFilters();
+            updateSelectedCount();
+        }
+        
+        function updateSelectedCount() {
+            document.getElementById('selectedCount').textContent = `Выбрано: ${selectedAccounts.size}`;
+        }
+        
+        async function verifySelected() {
+            if (selectedAccounts.size === 0) {
+                alert('Выберите аккаунты для проверки');
+                return;
+            }
+            
+            alert(`Проверка ${selectedAccounts.size} аккаунтов...`);
+            // TODO: Implement verification
+        }
+        
+        async function startWarming() {
+            if (selectedAccounts.size === 0) {
+                alert('Выберите аккаунты для прогрева');
+                return;
+            }
+            
+            alert(`Запуск прогрева ${selectedAccounts.size} аккаунтов...`);
+            // TODO: Implement warming
+        }
+        
+        async function deleteSelected() {
+            if (selectedAccounts.size === 0) {
+                alert('Выберите аккаунты для удаления');
+                return;
+            }
+            
+            if (!confirm(`Удалить ${selectedAccounts.size} аккаунтов?`)) return;
+            
+            // TODO: Implement deletion
+            alert('Удаление...');
+        }
+        
+        function verifyAccount(id) {
+            alert(`Проверка аккаунта ${id}...`);
+        }
+        
+        function editAccount(id) {
+            alert(`Редактирование аккаунта ${id}...`);
+        }
+        
+        async function deleteAccount(id) {
+            if (!confirm('Удалить аккаунт?')) return;
+            
+            try {
+                await fetch(`${API_URL}/api/managed-accounts/${id}`, { method: 'DELETE' });
+                loadAccounts();
+            } catch (e) {
+                alert(`Ошибка: ${e.message}`);
+            }
+        }
+        
+        // ==================== HELPERS ====================
+        function getPlatformIcon(platform) {
+            const icons = { tiktok: '🎵', youtube: '📺', instagram: '📸' };
+            return icons[platform] || '📱';
+        }
+        
+        function getTypeName(type) {
+            const names = { cookie: '🍪 Cookie', login: '🔐 Login', autoreg: '🤖 Autoreg' };
+            return names[type] || type || 'Login';
+        }
+        
+        function getStatusName(status) {
+            const names = {
+                new: 'Новый',
+                verifying: 'Проверка',
+                verified: 'Проверен',
+                warming: 'Прогрев',
+                ready: 'Готов',
+                working: 'Работает',
+                dead: 'Мёртв',
+                banned: 'Бан'
+            };
+            return names[status] || status || 'Новый';
+        }
+        
+        function getCountryFlag(country) {
+            const flags = {
+                US: '🇺🇸', UK: '🇬🇧', DE: '🇩🇪', FR: '🇫🇷', RU: '🇷🇺',
+                CA: '🇨🇦', AU: '🇦🇺', JP: '🇯🇵', KR: '🇰🇷', BR: '🇧🇷'
+            };
+            return flags[country] || '🌍';
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Никогда';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function updatePagination(total) {
+            document.getElementById('showingFrom').textContent = total > 0 ? 1 : 0;
+            document.getElementById('showingTo').textContent = Math.min(50, total);
+            document.getElementById('totalItems').textContent = total;
+        }
+        
+        function prevPage() { /* TODO */ }
+        function nextPage() { /* TODO */ }
+        function exportAccounts() { alert('Экспорт...'); }
+        
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAccounts();
+        });
+        
+        // Close modal on overlay click
+        document.getElementById('importModal').addEventListener('click', (e) => {
+            if (e.target.id === 'importModal') closeImportModal();
+        });
+    </script>
+</body>
+</html>
