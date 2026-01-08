@@ -52,9 +52,10 @@ export class BatchService {
       const proxies = parseTextFile(proxiesFilePath);
 
       // Валидация: количество прокси должно совпадать с количеством аккаунтов
-      if (accounts.length !== proxies.length) {
+      const requiredProxies = Math.ceil(accounts.length / 5);
+      if (proxies.length < requiredProxies) {
         throw new Error(
-          `Количество прокси (${proxies.length}) не совпадает с количеством аккаунтов (${accounts.length})`
+          `Необходимо минимум ${requiredProxies} прокси для обработки ${accounts.length} аккаунтов`
         );
       }
 
@@ -281,15 +282,18 @@ export class BatchService {
 
       const accountsData = await Promise.all(
         accounts.map(async (accountCookie, index) => {
+          const proxyIndex = Math.floor(index / 5);
           const accountData = await this.accountService.findOrCreateAccount(
             accountCookie,
             undefined,
-            proxies[index]
+            proxies[proxyIndex]
           );
 
           // Логируем информацию о новых аккаунтах
           if (accountData.isNew) {
-            log(`🆕 Новый аккаунт обнаружен (индекс ${index}), видео будут удалены перед загрузкой`);
+            log(
+              `🆕 Новый аккаунт обнаружен (индекс ${index}), видео будут удалены перед загрузкой`
+            );
           }
 
           return accountData;
@@ -304,7 +308,9 @@ export class BatchService {
           .map((tag) => tag.trim())
           .filter((tag) => tag);
         log(
-          `🏷️ Добавляем хэштеги [${hashtagArray.join(", ")}] ко всем ${accountsData.length} аккаунтам`
+          `🏷️ Добавляем хэштеги [${hashtagArray.join(", ")}] ко всем ${
+            accountsData.length
+          } аккаунтам`
         );
 
         // СНАЧАЛА создаем все хэштеги заранее (решение race condition)
@@ -316,31 +322,66 @@ export class BatchService {
         const hashtagResults = await Promise.allSettled(
           accountsData.map(async (accountData, index) => {
             try {
-              log(`🏷️ [${index + 1}/${accountsData.length}] Добавляем хэштеги к аккаунту ${accountData.id.substring(0, 8)}...`);
+              log(
+                `🏷️ [${index + 1}/${
+                  accountsData.length
+                }] Добавляем хэштеги к аккаунту ${accountData.id.substring(
+                  0,
+                  8
+                )}...`
+              );
               await this.accountService.addHashtagsToAccount(
                 accountData.id,
                 hashtagArray
               );
-              log(`✅ [${index + 1}/${accountsData.length}] Хэштеги добавлены к аккаунту ${accountData.id.substring(0, 8)}...`);
+              log(
+                `✅ [${index + 1}/${
+                  accountsData.length
+                }] Хэштеги добавлены к аккаунту ${accountData.id.substring(
+                  0,
+                  8
+                )}...`
+              );
               return { success: true, accountId: accountData.id };
             } catch (error: any) {
-              log(`❌ [${index + 1}/${accountsData.length}] Ошибка добавления хэштегов к аккаунту ${accountData.id.substring(0, 8)}...: ${error.message}`);
-              return { success: false, accountId: accountData.id, error: error.message };
+              log(
+                `❌ [${index + 1}/${
+                  accountsData.length
+                }] Ошибка добавления хэштегов к аккаунту ${accountData.id.substring(
+                  0,
+                  8
+                )}...: ${error.message}`
+              );
+              return {
+                success: false,
+                accountId: accountData.id,
+                error: error.message,
+              };
             }
           })
         );
 
         // Подсчитываем результаты
-        const successful = hashtagResults.filter(r => r.status === 'fulfilled' && r.value.success).length;
+        const successful = hashtagResults.filter(
+          (r) => r.status === "fulfilled" && r.value.success
+        ).length;
         const failed = hashtagResults.length - successful;
-        
-        log(`✅ Хэштеги добавлены: ${successful}/${accountsData.length} аккаунтов успешно, ${failed} с ошибками`);
-        
+
+        log(
+          `✅ Хэштеги добавлены: ${successful}/${accountsData.length} аккаунтов успешно, ${failed} с ошибками`
+        );
+
         if (failed > 0) {
           log(`⚠️ Детали ошибок при добавлении хэштегов:`);
           hashtagResults.forEach((result, index) => {
-            if (result.status === 'rejected' || (result.status === 'fulfilled' && !result.value.success)) {
-              const error = result.status === 'rejected' ? result.reason : result.value.error;
+            if (
+              result.status === "rejected" ||
+              (result.status === "fulfilled" && !result.value.success)
+            ) {
+              const error =
+                result.status === "rejected"
+                  ? result.reason
+                  : result.value.error;
               log(`  - Аккаунт ${index}: ${error}`);
             }
           });

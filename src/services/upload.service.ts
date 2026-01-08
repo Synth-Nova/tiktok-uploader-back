@@ -29,19 +29,23 @@ export function distributeVideos(
   // Видео 6 → Аккаунт 0 (снова по кругу)
   videoFiles.forEach((videoPath, index) => {
     const accountIndex = index % accounts.length;
+    const proxyIndex = Math.floor(accountIndex / 5);
 
     distribution.push({
       videoPath,
       accountIndex: accountIndex,
       accountCookie: accounts[accountIndex],
-      proxy: proxies[accountIndex],
+      proxy: proxies[proxyIndex],
     });
   });
 
   return distribution;
 }
 
-export async function extractZipToTemp(zipPath: string, tempDir: string): Promise<string[]> {
+export async function extractZipToTemp(
+  zipPath: string,
+  tempDir: string
+): Promise<string[]> {
   // Извлекаем весь ZIP архив в временную директорию
   await extract(zipPath, { dir: path.resolve(tempDir) });
 
